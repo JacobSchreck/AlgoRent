@@ -1,0 +1,4 @@
+com/algorent/backend/AuthController.class
+com/algorent/backend/AuthController$SignupRequest.class
+com/algorent/backend/AuthController$UserRow.class
+com/algorent/backend/AuthController$LoginRequest.class
