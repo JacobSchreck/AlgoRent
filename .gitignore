@@ -2,3 +2,11 @@
 .venv/
 __pycache__/
 *.pyc
+# Java / Maven
+backend/target/
+
+# IDEs
+.idea/
+*.iml
+.vscode/
+.DS_Store
