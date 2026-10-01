@@ -1,0 +1,1 @@
+"""AlgoRent listing ingestion package."""
