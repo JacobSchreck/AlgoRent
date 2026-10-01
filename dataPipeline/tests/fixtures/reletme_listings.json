@@ -1,0 +1,21 @@
+[
+  {
+    "id": "c8f4caee-test",
+    "title": "Two bedroom near campus",
+    "city": "Gainesville",
+    "state": "FL",
+    "zip": "32601",
+    "address": "123 Test Ave",
+    "rent": "1,122.00",
+    "beds": 2,
+    "baths": 2,
+    "lease_start": "2027-05-01",
+    "lease_end": "2027-08-15",
+    "property_type": "Apartment",
+    "pet_friendly": true,
+    "sqft": 942,
+    "lease_type": "entire-place",
+    "security_deposit": 500,
+    "created_at": "2026-09-28T12:00:00Z"
+  }
+]
