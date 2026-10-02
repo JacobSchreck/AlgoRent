@@ -8,7 +8,7 @@ Java 21 + Spring Boot 3.5 REST API. Postgres schema is managed by Flyway.
 2. From `backend/`:
 
    ```bash
-   mvn spring-boot:run
+   ./mvnw spring-boot:run
    ```
 
    Or open `backend/` in IntelliJ and run `AlgoRentApplication`.
@@ -16,7 +16,7 @@ Java 21 + Spring Boot 3.5 REST API. Postgres schema is managed by Flyway.
 
 On startup Flyway applies any new migrations in `src/main/resources/db/migration`.
 
-Requires JDK 21 and Maven 3.9+ (IntelliJ bundles Maven).
+Requires JDK 21. `./mvnw` downloads the right Maven version automatically (or use IntelliJ's bundled Maven).
 
 ### Configuration
 
@@ -126,6 +126,33 @@ Any listing field except `id`, `title`, `city` and `sourceUrl` can be `null` whe
 ```
 
 A malformed value, such as `moveIn=05/20/2027` or `maxRent=cheap`, also returns `400`.
+
+### `GET /api/listings/{id}`
+
+One listing with every field and all of its photos, for the listing detail page.
+
+```
+GET /api/listings/42
+```
+
+Returns the same fields as a search result, plus `description`, `securityDeposit`, `squareFeet`, `parkingAvailable`, `laundryAvailable`, `petsAllowed`, `contactName`, `contactEmail`, `contactPhone`, `status`, `lastSeenAt`, and `imageUrls` (every photo, in display order, instead of a single `thumbnailUrl`).
+
+Listings that are no longer active are still returned, with their `status` (for example `REMOVED`), so a saved listing can be shown as "no longer available". An unknown id returns `404` with title `Listing not found`. A non-numeric id returns `400`.
+
+### Accounts: `/api/auth/*`
+
+Session-based sign-in. The browser must send cookies: `fetch(url, { credentials: "include" })`.
+
+| Endpoint | Body | Success | Errors |
+| --- | --- | --- | --- |
+| `POST /api/auth/signup` | `{"fullName", "email", "password"}` | `201` | `400` invalid input (password under 8 characters, bad email), `409` email already used |
+| `POST /api/auth/login` | `{"email", "password"}` | `200`, starts a session | `400` missing fields, `401` wrong email or password |
+| `GET /api/auth/me` | none | `200` `{"id", "email", "firstName", "lastName"}` | `401` not signed in |
+| `POST /api/auth/logout` | none | `200`, ends the session | none |
+
+Emails are stored lower-case, and passwords are stored only as bcrypt hashes. Errors return `{"message": "..."}`.
+
+**Verification:** `users.email_verified_at` and `users.phone_verified_at` are `NULL` until the user verifies (migration V3). Verification codes go in `verification_tokens`. Store only a hash of each code, with an expiry, and set `used_at` once it has been used.
 
 ### `GET /actuator/health`
 

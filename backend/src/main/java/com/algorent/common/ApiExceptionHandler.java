@@ -1,5 +1,6 @@
 package com.algorent.common;
 
+import com.algorent.listing.detail.ListingNotFoundException;
 import com.algorent.listing.search.InvalidSearchException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
@@ -19,6 +20,13 @@ public class ApiExceptionHandler extends ResponseEntityExceptionHandler {
         ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, ex.getMessage());
         problem.setTitle("Invalid search");
         problem.setProperty("errors", ex.getErrors());
+        return problem;
+    }
+
+    @ExceptionHandler(ListingNotFoundException.class)
+    public ProblemDetail handleListingNotFound(ListingNotFoundException ex) {
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.NOT_FOUND, ex.getMessage());
+        problem.setTitle("Listing not found");
         return problem;
     }
 }

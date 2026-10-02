@@ -11,6 +11,7 @@ erDiagram
     users ||--o{ inquiries : makes
     listings ||--o{ inquiries : "asked about in"
     inquiries ||--o{ messages : logs
+    users ||--o{ verification_tokens : verifies
 
     users {
         serial id PK
@@ -18,6 +19,9 @@ erDiagram
         varchar password_hash
         varchar first_name
         varchar last_name
+        timestamp email_verified_at "NULL until verified"
+        varchar phone
+        timestamp phone_verified_at "NULL until verified"
         timestamp created_at
         timestamp updated_at
     }
@@ -101,11 +105,22 @@ erDiagram
         timestamp sent_at
         timestamp created_at
     }
+
+    verification_tokens {
+        serial id PK
+        integer user_id FK
+        varchar channel "EMAIL or PHONE"
+        varchar token_hash UK "hash only, never the raw code"
+        timestamp expires_at
+        timestamp used_at
+        timestamp created_at
+    }
 ```
 
 ## Notes
 
 - **Availability** is stored on the listing (`available_from`, `available_until`), not in a separate table. Each scraped listing has a single date window. If we later need several windows per listing (calendar sync), that becomes its own table.
 - **Hosts are not users.** Listings come from other sites, so inquiries and messages belong to the guest. `messages.direction` records whether the guest sent the message or received it.
+- **Verification** (V3): a user is email- or phone-verified once `email_verified_at` / `phone_verified_at` is set. Each code sent is a `verification_tokens` row that stores only a hash and expires.
 - **Deletes cascade** from users and listings to favorites, images, inquiries and messages.
 - **Search indexes** (V2) are partial indexes on `lower(city)` for `ACTIVE` listings, combined with dates and with rent.
