@@ -10,3 +10,6 @@ backend/target/
 *.iml
 .vscode/
 .DS_Store
+
+# Build output anywhere
+target/
