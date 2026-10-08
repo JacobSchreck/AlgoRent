@@ -22,11 +22,14 @@ export default function LoginPage() {
   const router = useRouter();
 
   const [isSignUp, setIsSignUp] = useState(true);
+  const [verifying, setVerifying] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [verificationCode, setVerificationCode] =
+    useState("");
 
   const [message, setMessage] = useState("");
   const [isError, setIsError] = useState(false);
@@ -34,6 +37,8 @@ export default function LoginPage() {
 
   function changeMode(signUp: boolean) {
     setIsSignUp(signUp);
+    setVerifying(false);
+    setVerificationCode("");
     setMessage("");
     setIsError(false);
   }
@@ -48,19 +53,27 @@ export default function LoginPage() {
     setLoading(true);
 
     try {
-      const endpoint =
-        isSignUp ? "signup" : "login";
+      const endpoint = verifying
+        ? "verify"
+        : isSignUp
+          ? "signup"
+          : "login";
 
-      const body = isSignUp
+      const body = verifying
         ? {
-            fullName: name,
             email,
-            password,
+            code: verificationCode,
           }
-        : {
-            email,
-            password,
-          };
+        : isSignUp
+          ? {
+              fullName: name,
+              email,
+              password,
+            }
+          : {
+              email,
+              password,
+            };
 
       const response = await fetch(
         `${API_URL}/api/auth/${endpoint}`,
@@ -77,25 +90,89 @@ export default function LoginPage() {
       const data = await response.json();
 
       if (!response.ok) {
+        if (
+          !isSignUp &&
+          !verifying &&
+          response.status === 403
+        ) {
+          setVerifying(true);
+        }
+
         setIsError(true);
-        setMessage(data.message);
+        setMessage(
+          data.message || "Request failed."
+        );
+        return;
+      }
+
+      if (verifying) {
+        setVerifying(false);
+        setIsSignUp(false);
+        setVerificationCode("");
+        setPassword("");
+        setMessage(
+          "Email verified. Sign in to continue."
+        );
         return;
       }
 
       if (isSignUp) {
-        setIsSignUp(false);
+        setVerifying(true);
         setName("");
         setPassword("");
-
         setMessage(
-          "Account created. Sign in to continue."
+          "Verification code sent to your email."
         );
-
         return;
       }
 
       router.push("/");
       router.refresh();
+
+    } catch {
+      setIsError(true);
+
+      setMessage(
+        "Unable to connect to the server."
+      );
+
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function handleResend() {
+    setMessage("");
+    setIsError(false);
+    setLoading(true);
+
+    try {
+      const response = await fetch(
+        `${API_URL}/api/auth/resend`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            email,
+          }),
+        }
+      );
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        setIsError(true);
+        setMessage(
+          data.message || "Unable to resend code."
+        );
+        return;
+      }
+
+      setMessage(
+        "A new verification code was sent."
+      );
 
     } catch {
       setIsError(true);
@@ -180,49 +257,59 @@ export default function LoginPage() {
           className="flex w-full max-w-[420px] flex-col gap-[22px]"
         >
 
-          <div className="flex rounded-[14px] bg-[#f1f2f4] p-1">
+          {!verifying && (
+            <div className="flex rounded-[14px] bg-[#f1f2f4] p-1">
 
-            <Button
-              type="button"
-              onClick={() => changeMode(false)}
-              className={
-                isSignUp
-                  ? inactiveTab
-                  : activeTab
-              }
-            >
-              Sign in
-            </Button>
+              <Button
+                type="button"
+                onClick={() =>
+                  changeMode(false)
+                }
+                className={
+                  isSignUp
+                    ? inactiveTab
+                    : activeTab
+                }
+              >
+                Sign in
+              </Button>
 
-            <Button
-              type="button"
-              onClick={() => changeMode(true)}
-              className={
-                isSignUp
-                  ? activeTab
-                  : inactiveTab
-              }
-            >
-              Create account
-            </Button>
+              <Button
+                type="button"
+                onClick={() =>
+                  changeMode(true)
+                }
+                className={
+                  isSignUp
+                    ? activeTab
+                    : inactiveTab
+                }
+              >
+                Create account
+              </Button>
 
-          </div>
+            </div>
+          )}
 
           <div>
             <h2 className="mb-1.5 text-[30px] font-extrabold tracking-tight">
-              {isSignUp
-                ? "Create your account"
-                : "Welcome back"}
+              {verifying
+                ? "Verify your email"
+                : isSignUp
+                  ? "Create your account"
+                  : "Welcome back"}
             </h2>
 
             <p className="text-[15px] text-[#5b616c]">
-              {isSignUp
-                ? "Save listings, message hosts, and post your own place."
-                : "Sign in to see your saved places and messages."}
+              {verifying
+                ? `Enter the code sent to ${email}.`
+                : isSignUp
+                  ? "Save listings, message hosts, and post your own place."
+                  : "Sign in to see your saved places and messages."}
             </p>
           </div>
 
-          {isSignUp && (
+          {isSignUp && !verifying && (
             <div>
               <Label
                 htmlFor="name"
@@ -243,77 +330,111 @@ export default function LoginPage() {
             </div>
           )}
 
-          <div>
-            <Label
-              htmlFor="email"
-              className="mb-1.5 block text-sm font-bold"
-            >
-              Email
-            </Label>
-
-            <Input
-              id="email"
-              type="email"
-              value={email}
-              onChange={(event) =>
-                setEmail(event.target.value)
-              }
-              placeholder="sublease@gmail.com"
-              className={inputStyle}
-              required
-            />
-          </div>
-
-          <div>
-
-            <div className="mb-1.5 flex items-baseline justify-between">
-
+          {!verifying && (
+            <div>
               <Label
-                htmlFor="password"
-                className="text-sm font-bold"
+                htmlFor="email"
+                className="mb-1.5 block text-sm font-bold"
               >
-                Password
+                Email
               </Label>
 
-              {!isSignUp && (
-                <span className="text-[13px] text-[#5b616c]">
-                  Forgot password?
-                </span>
-              )}
-
-            </div>
-
-            <div className="flex h-[50px] items-center rounded-xl border border-[#d9dce1] pl-3.5 pr-1.5">
-
               <Input
-                id="password"
-                type={
-                  showPassword
-                    ? "text"
-                    : "password"
-                }
-                value={password}
+                id="email"
+                type="email"
+                value={email}
                 onChange={(event) =>
-                  setPassword(event.target.value)
+                  setEmail(event.target.value)
                 }
-                className="h-full flex-1 border-none bg-transparent px-0 text-[15px] md:text-[15px] focus-visible:ring-0"
+                placeholder="sublease@gmail.com"
+                className={inputStyle}
                 required
               />
-
-              <Button
-                type="button"
-                onClick={() =>
-                  setShowPassword(!showPassword)
-                }
-                className="h-[38px] rounded-[9px] bg-[#f1f2f4] px-3 text-[13px] font-bold text-[#111418] hover:bg-[#e6e8eb]"
-              >
-                {showPassword
-                  ? "Hide"
-                  : "Show"}
-              </Button>
-
             </div>
-          </div>
+          )}
+
+          {verifying && (
+            <div>
+              <Label
+                htmlFor="verificationCode"
+                className="mb-1.5 block text-sm font-bold"
+              >
+                Verification code
+              </Label>
+
+              <Input
+                id="verificationCode"
+                value={verificationCode}
+                onChange={(event) =>
+                  setVerificationCode(
+                    event.target.value
+                  )
+                }
+                inputMode="numeric"
+                pattern="[0-9]{6}"
+                maxLength={6}
+                className={inputStyle}
+                required
+              />
+            </div>
+          )}
+
+          {!verifying && (
+            <div>
+
+              <div className="mb-1.5 flex items-baseline justify-between">
+
+                <Label
+                  htmlFor="password"
+                  className="text-sm font-bold"
+                >
+                  Password
+                </Label>
+
+                {!isSignUp && (
+                  <span className="text-[13px] text-[#5b616c]">
+                    Forgot password?
+                  </span>
+                )}
+
+              </div>
+
+              <div className="flex h-[50px] items-center rounded-xl border border-[#d9dce1] pl-3.5 pr-1.5">
+
+                <Input
+                  id="password"
+                  type={
+                    showPassword
+                      ? "text"
+                      : "password"
+                  }
+                  value={password}
+                  onChange={(event) =>
+                    setPassword(
+                      event.target.value
+                    )
+                  }
+                  className="h-full flex-1 border-none bg-transparent px-0 text-[15px] md:text-[15px] focus-visible:ring-0"
+                  required
+                />
+
+                <Button
+                  type="button"
+                  onClick={() =>
+                    setShowPassword(
+                      !showPassword
+                    )
+                  }
+                  className="h-[38px] rounded-[9px] bg-[#f1f2f4] px-3 text-[13px] font-bold text-[#111418] hover:bg-[#e6e8eb]"
+                >
+                  {showPassword
+                    ? "Hide"
+                    : "Show"}
+                </Button>
+
+              </div>
+            </div>
+          )}
 
           {message && (
             <p
@@ -334,10 +455,23 @@ export default function LoginPage() {
           >
             {loading
               ? "Please wait..."
-              : isSignUp
-                ? "Create account"
-                : "Sign in"}
+              : verifying
+                ? "Verify email"
+                : isSignUp
+                  ? "Create account"
+                  : "Sign in"}
           </Button>
+
+          {verifying && (
+            <Button
+              type="button"
+              disabled={loading}
+              onClick={handleResend}
+              className={inactiveTab}
+            >
+              Resend code
+            </Button>
+          )}
 
           <p className="text-center text-sm text-[#5b616c]">
             Just looking?{" "}
