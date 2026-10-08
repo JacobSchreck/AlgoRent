@@ -27,6 +27,9 @@ server:
   port: ${PORT:8080}
 
 management:
+  health:
+    mail:
+      enabled: false
   endpoints:
     web:
       exposure:
