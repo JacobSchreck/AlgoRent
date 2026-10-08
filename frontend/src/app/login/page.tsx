@@ -4,352 +4,178 @@ import { FormEvent, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Plus_Jakarta_Sans } from "next/font/google";
-
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
 
-const font = Plus_Jakarta_Sans({
-  subsets: ["latin"],
-  weight: ["500", "600", "700", "800"],
-});
+const objFont = Plus_Jakarta_Sans({ subsets: ["latin"], weight: ["500", "600", "700", "800"] });
 
-const API_URL =
-  process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
+const strApiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
+
+// same gradient as the home page
+const strPageCss = `
+  .bg-drift {
+    background: linear-gradient(125deg, #b9cbe0 0%, #9fb6d1 25%, #c3c9e3 50%, #a8c0d6 75%, #b9cbe0 100%);
+    background-size: 300% 300%;
+    animation: drift 22s ease-in-out infinite;
+  }
+  @keyframes drift {
+    0% { background-position: 0% 30%; }
+    50% { background-position: 100% 70%; }
+    100% { background-position: 0% 30%; }
+  }
+  .fade-in { animation: rise 1s ease-out both; }
+  @keyframes rise {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+`;
 
 export default function LoginPage() {
-  const router = useRouter();
+  const objRouter = useRouter();
 
-  const [isSignUp, setIsSignUp] = useState(true);
-  const [showPassword, setShowPassword] = useState(false);
+  const [blnSignUp, setBlnSignUp] = useState(false);
+  const [blnShowPass, setBlnShowPass] = useState(false);
 
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+  const [strName, setStrName] = useState("");
+  const [strEmail, setStrEmail] = useState("");
+  const [strPass, setStrPass] = useState("");
 
-  const [message, setMessage] = useState("");
-  const [isError, setIsError] = useState(false);
-  const [loading, setLoading] = useState(false);
+  const [strMsg, setStrMsg] = useState("");
+  const [blnErr, setBlnErr] = useState(false);
+  const [blnLoading, setBlnLoading] = useState(false);
 
-  function changeMode(signUp: boolean) {
-    setIsSignUp(signUp);
-    setMessage("");
-    setIsError(false);
+  function changeMode() {
+    setBlnSignUp(!blnSignUp);
+    setStrMsg("");
+    setBlnErr(false);
   }
 
-  async function handleSubmit(
-    event: FormEvent<HTMLFormElement>
-  ) {
-    event.preventDefault();
-
-    setMessage("");
-    setIsError(false);
-    setLoading(true);
+  async function handleSubmit(evt: FormEvent<HTMLFormElement>) {
+    evt.preventDefault();
+    setStrMsg("");
+    setBlnErr(false);
+    setBlnLoading(true);
 
     try {
-      const endpoint =
-        isSignUp ? "signup" : "login";
+      let strEndpoint = "login";
+      let objBody: object = { email: strEmail, password: strPass };
 
-      const body = isSignUp
-        ? {
-            fullName: name,
-            email,
-            password,
-          }
-        : {
-            email,
-            password,
-          };
+      if (blnSignUp == true) {
+        strEndpoint = "signup";
+        objBody = { fullName: strName, email: strEmail, password: strPass };
+      }
 
-      const response = await fetch(
-        `${API_URL}/api/auth/${endpoint}`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          credentials: "include",
-          body: JSON.stringify(body),
-        }
-      );
+      const objRes = await fetch(`${strApiUrl}/api/auth/${strEndpoint}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify(objBody),
+      });
 
-      const data = await response.json();
+      const objData = await objRes.json();
 
-      if (!response.ok) {
-        setIsError(true);
-        setMessage(data.message);
+      if (objRes.ok == false) {
+        setBlnErr(true);
+        setStrMsg(objData.message);
         return;
       }
 
-      if (isSignUp) {
-        setIsSignUp(false);
-        setName("");
-        setPassword("");
-
-        setMessage(
-          "Account created. Sign in to continue."
-        );
-
+      if (blnSignUp == true) {
+        setBlnSignUp(false);
+        setStrName("");
+        setStrPass("");
+        setStrMsg("Account created. Sign in to continue.");
         return;
       }
 
-      router.push("/");
-      router.refresh();
+      objRouter.push("/");
+      objRouter.refresh();
 
-    } catch {
-      setIsError(true);
-
-      setMessage(
-        "Unable to connect to the server."
-      );
-
+    } catch (objErr) {
+      console.log("couldnt reach backend", objErr);
+      setBlnErr(true);
+      setStrMsg("Unable to connect to the server.");
     } finally {
-      setLoading(false);
+      setBlnLoading(false);
     }
   }
 
-  const activeTab =
-    "h-[42px] flex-1 rounded-[11px] bg-white text-sm font-bold text-[#111418] shadow hover:bg-white";
+  const strInStyle = "h-[46px] rounded-[10px] border border-[#d1d5db] bg-white px-3.5 text-[15px] md:text-[15px] focus-visible:border-[#3f5b6e] focus-visible:ring-0";
+  const strLblStyle = "text-sm font-semibold";
 
-  const inactiveTab =
-    "h-[42px] flex-1 rounded-[11px] bg-transparent text-sm font-bold text-[#5b616c] hover:bg-transparent";
+  let strHeading = "Sign in";
+  let strSwitchText = "Don't have an account?";
+  let strSwitchLink = "Create one";
+  if (blnSignUp == true) {
+    strHeading = "Create an account";
+    strSwitchText = "Already have an account?";
+    strSwitchLink = "Sign in";
+  }
 
-  const inputStyle =
-    "h-[50px] rounded-xl border border-[#d9dce1] bg-white px-3.5 text-[15px] md:text-[15px] focus-visible:border-[#0b7f76] focus-visible:ring-0";
+  let strBtnText = strHeading == "Sign in" ? "Sign in" : "Create account";
+  if (blnLoading == true) {
+    strBtnText = "Please wait...";
+  }
 
   return (
-    <div
-      className={`${font.className} flex min-h-screen gap-5 bg-white p-5 text-[#111418]`}
-    >
-      <div className="relative hidden w-[560px] shrink-0 flex-col justify-between overflow-hidden rounded-[28px] bg-[url('/hero.png')] bg-cover bg-center p-9 text-white md:flex">
+    <div className={`${objFont.className} bg-drift flex min-h-screen flex-col text-[#1c2733]`}>
+      <style>{strPageCss}</style>
 
-        <div className="absolute inset-0 bg-[#052a2a]/40" />
+      <nav className="flex h-16 items-center border-b border-white/50 bg-white/40 px-8 backdrop-blur-lg">
+        <Link href="/" className="text-[18px] font-extrabold tracking-tight">AlgoRent</Link>
+      </nav>
 
-        <Link
-          href="/"
-          className="relative flex items-center gap-2 text-[22px] font-extrabold tracking-tight"
-        >
-          <span className="flex h-[26px] w-[26px] items-center justify-center rounded-lg bg-[#5eead4] text-[#06302e]">
-            <svg
-              width="15"
-              height="15"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2.5"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <path d="M3 11l9-7 9 7" />
-              <path d="M6 10v10h12V10" />
-            </svg>
-          </span>
+      <div className="flex flex-1 items-center justify-center px-4 py-10">
+        <Card className="fade-in w-full max-w-[400px] gap-0 rounded-[18px] border border-white/80 bg-white/80 p-9 text-base text-[#1c2733] shadow-[0_10px_30px_rgba(63,91,110,0.15)] ring-0 backdrop-blur-xl">
+          <form onSubmit={handleSubmit} className="flex flex-col gap-[18px]">
 
-          AlgoRent
-        </Link>
+            <h1 className="text-[26px] font-extrabold">{strHeading}</h1>
 
-        <Card className="relative gap-0 rounded-[22px] border border-white/40 bg-white/15 p-7 text-base text-white shadow-none ring-0 backdrop-blur-xl">
+            {blnSignUp == true && (
+              <div className="flex flex-col gap-1.5">
+                <Label htmlFor="name" className={strLblStyle}>Full name</Label>
+                <Input id="name" value={strName} onChange={(evt) => setStrName(evt.target.value)} className={strInStyle} required />
+              </div>
+            )}
 
-          <h1 className="mb-[18px] text-[42px] font-extrabold leading-[1.05] tracking-tight">
-            Find a place for the summer.
-          </h1>
-
-          <p className="mb-2.5 flex items-center gap-2.5 font-semibold">
-            <span className="text-[#5eead4]">✓</span>
-            Search by city and dates
-          </p>
-
-          <p className="mb-2.5 flex items-center gap-2.5 font-semibold">
-            <span className="text-[#5eead4]">✓</span>
-            Save and compare side by side
-          </p>
-
-          <p className="flex items-center gap-2.5 font-semibold">
-            <span className="text-[#5eead4]">✓</span>
-            Keep every message in one place
-          </p>
-
-        </Card>
-      </div>
-
-      <div className="flex flex-1 items-center justify-center">
-
-        <form
-          onSubmit={handleSubmit}
-          className="flex w-full max-w-[420px] flex-col gap-[22px]"
-        >
-
-          <div className="flex rounded-[14px] bg-[#f1f2f4] p-1">
-
-            <Button
-              type="button"
-              onClick={() => changeMode(false)}
-              className={
-                isSignUp
-                  ? inactiveTab
-                  : activeTab
-              }
-            >
-              Sign in
-            </Button>
-
-            <Button
-              type="button"
-              onClick={() => changeMode(true)}
-              className={
-                isSignUp
-                  ? activeTab
-                  : inactiveTab
-              }
-            >
-              Create account
-            </Button>
-
-          </div>
-
-          <div>
-            <h2 className="mb-1.5 text-[30px] font-extrabold tracking-tight">
-              {isSignUp
-                ? "Create your account"
-                : "Welcome back"}
-            </h2>
-
-            <p className="text-[15px] text-[#5b616c]">
-              {isSignUp
-                ? "Save listings, message hosts, and post your own place."
-                : "Sign in to see your saved places and messages."}
-            </p>
-          </div>
-
-          {isSignUp && (
-            <div>
-              <Label
-                htmlFor="name"
-                className="mb-1.5 block text-sm font-bold"
-              >
-                Full name
-              </Label>
-
-              <Input
-                id="name"
-                value={name}
-                onChange={(event) =>
-                  setName(event.target.value)
-                }
-                className={inputStyle}
-                required
-              />
-            </div>
-          )}
-
-          <div>
-            <Label
-              htmlFor="email"
-              className="mb-1.5 block text-sm font-bold"
-            >
-              Email
-            </Label>
-
-            <Input
-              id="email"
-              type="email"
-              value={email}
-              onChange={(event) =>
-                setEmail(event.target.value)
-              }
-              placeholder="sublease@gmail.com"
-              className={inputStyle}
-              required
-            />
-          </div>
-
-          <div>
-
-            <div className="mb-1.5 flex items-baseline justify-between">
-
-              <Label
-                htmlFor="password"
-                className="text-sm font-bold"
-              >
-                Password
-              </Label>
-
-              {!isSignUp && (
-                <span className="text-[13px] text-[#5b616c]">
-                  Forgot password?
-                </span>
-              )}
-
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="email" className={strLblStyle}>Email</Label>
+              <Input id="email" type="email" value={strEmail} onChange={(evt) => setStrEmail(evt.target.value)} placeholder="you@ufl.edu" className={strInStyle} required />
             </div>
 
-            <div className="flex h-[50px] items-center rounded-xl border border-[#d9dce1] pl-3.5 pr-1.5">
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="password" className={strLblStyle}>Password</Label>
+              <div className="flex h-[46px] items-center rounded-[10px] border border-[#d1d5db] bg-white pl-3.5 pr-1.5">
+                <Input id="password" type={blnShowPass == true ? "text" : "password"} value={strPass} onChange={(evt) => setStrPass(evt.target.value)} className="h-full flex-1 border-none bg-transparent px-0 text-[15px] md:text-[15px] focus-visible:ring-0" required />
+                <Button type="button" onClick={() => setBlnShowPass(!blnShowPass)} className="h-[34px] rounded-lg bg-[#eef1f4] px-3 text-[13px] font-bold text-[#1c2733] hover:bg-[#e2e7ec]">
+                  {blnShowPass == true ? "Hide" : "Show"}
+                </Button>
+              </div>
+            </div>
 
-              <Input
-                id="password"
-                type={
-                  showPassword
-                    ? "text"
-                    : "password"
-                }
-                value={password}
-                onChange={(event) =>
-                  setPassword(event.target.value)
-                }
-                className="h-full flex-1 border-none bg-transparent px-0 text-[15px] md:text-[15px] focus-visible:ring-0"
-                required
-              />
+            {strMsg != "" && (
+              <p className={blnErr == true ? "text-sm text-red-600" : "text-sm text-[#3f5b6e]"}>{strMsg}</p>
+            )}
 
-              <Button
-                type="button"
-                onClick={() =>
-                  setShowPassword(!showPassword)
-                }
-                className="h-[38px] rounded-[9px] bg-[#f1f2f4] px-3 text-[13px] font-bold text-[#111418] hover:bg-[#e6e8eb]"
-              >
-                {showPassword
-                  ? "Hide"
-                  : "Show"}
+            <Button type="submit" disabled={blnLoading} className="h-12 rounded-[10px] bg-[#3f5b6e] text-[15px] font-bold text-white hover:bg-[#34495a]">
+              {strBtnText}
+            </Button>
+
+            <p className="text-center text-sm text-[#4a5866]">
+              {strSwitchText}{" "}
+              <Button type="button" onClick={changeMode} className="h-auto bg-transparent p-0 text-sm font-bold text-[#3f5b6e] hover:bg-transparent">
+                {strSwitchLink}
               </Button>
-
-            </div>
-          </div>
-
-          {message && (
-            <p
-              className={`text-sm ${
-                isError
-                  ? "text-red-600"
-                  : "text-[#0b7f76]"
-              }`}
-            >
-              {message}
             </p>
-          )}
 
-          <Button
-            type="submit"
-            disabled={loading}
-            className="h-[54px] rounded-[14px] bg-[#0b7f76] text-base font-bold text-white hover:bg-[#096b63]"
-          >
-            {loading
-              ? "Please wait..."
-              : isSignUp
-                ? "Create account"
-                : "Sign in"}
-          </Button>
+            <p className="text-center text-sm text-[#4a5866]">
+              Just looking? <Link href="/search" className="font-bold text-[#1c2733]">Browse without an account</Link>
+            </p>
 
-          <p className="text-center text-sm text-[#5b616c]">
-            Just looking?{" "}
-            <Link
-              href="/search"
-              className="font-bold text-[#111418]"
-            >
-              Browse without an account
-            </Link>
-          </p>
-
-        </form>
+          </form>
+        </Card>
       </div>
     </div>
   );
