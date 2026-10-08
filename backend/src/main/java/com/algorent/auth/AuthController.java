@@ -8,31 +8,41 @@ import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.mail.SimpleMailMessage;
+import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.time.LocalDateTime;
 import java.util.Locale;
 import java.util.Map;
 import java.util.regex.Pattern;
+import java.security.SecureRandom;
 
 @RestController
 @RequestMapping("/api/auth")
 public class AuthController {
 
-    private static final Pattern EMAIL_PATTERN =
-            Pattern.compile("^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$");
+    private static final Pattern EMAIL_PATTERN = Pattern.compile("^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$");
+
+    private static final Pattern CODE_PATTERN = Pattern.compile("^\\d{6}$");
+
+    private static final SecureRandom RANDOM = new SecureRandom();
 
     private final JdbcTemplate jdbc;
-    private final PasswordEncoder passwordEncoder =
-            new BCryptPasswordEncoder();
+    private final JavaMailSender mailSender;
 
-    public AuthController(JdbcTemplate jdbc) {
+    private final PasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
+
+    public AuthController(JdbcTemplate jdbc, JavaMailSender mailSender) {
         this.jdbc = jdbc;
+        this.mailSender = mailSender;
     }
 
     @PostMapping("/signup")
@@ -48,7 +58,9 @@ public class AuthController {
                 || !EMAIL_PATTERN.matcher(
                         request.email().trim()
                 ).matches()) {
-            return badRequest("A valid email is required.");
+            return badRequest(
+                    "A valid email is required."
+            );
         }
 
         if (request.password() == null
@@ -62,11 +74,14 @@ public class AuthController {
                 .trim()
                 .toLowerCase(Locale.ROOT);
 
-        String fullName = request.fullName().trim();
+        String fullName =
+                request.fullName().trim();
 
-        String[] nameParts = fullName.split("\\s+", 2);
+        String[] nameParts =
+                fullName.split("\\s+", 2);
 
-        String firstName = nameParts[0];
+        String firstName =
+                nameParts[0];
 
         String lastName =
                 nameParts.length > 1
@@ -116,14 +131,191 @@ public class AuthController {
                     );
         }
 
+        Integer userId =
+                jdbc.queryForObject(
+                        """
+                        SELECT id
+                        FROM users
+                        WHERE email = ?
+                        """,
+                        Integer.class,
+                        email
+                );
+
+        sendVerificationCode(
+                userId,
+                email
+        );
+
         return ResponseEntity
                 .status(HttpStatus.CREATED)
                 .body(
                         Map.of(
                                 "message",
-                                "Account created successfully."
+                                "Verification code sent."
                         )
                 );
+    }
+
+    @PostMapping("/verify")
+    @Transactional
+    public ResponseEntity<?> verify(
+            @RequestBody VerifyRequest request
+    ) {
+        if (request.email() == null
+                || !EMAIL_PATTERN.matcher(
+                        request.email().trim()
+                ).matches()
+                || request.code() == null
+                || !CODE_PATTERN.matcher(
+                        request.code().trim()
+                ).matches()) {
+
+            return badRequest(
+                    "Email and 6-digit verification code are required."
+            );
+        }
+
+        String email = request.email()
+                .trim()
+                .toLowerCase(Locale.ROOT);
+
+        Integer userId;
+
+        try {
+            userId = jdbc.queryForObject(
+                    """
+                    SELECT id
+                    FROM users
+                    WHERE email = ?
+                    """,
+                    Integer.class,
+                    email
+            );
+
+        } catch (EmptyResultDataAccessException e) {
+            return badRequest(
+                    "Invalid or expired verification code."
+            );
+        }
+
+        VerificationToken token;
+
+        try {
+            token = jdbc.queryForObject(
+                    """
+                    SELECT
+                        id,
+                        token_hash
+                    FROM verification_tokens
+                    WHERE user_id = ?
+                      AND channel = 'EMAIL'
+                      AND used_at IS NULL
+                      AND expires_at > (CURRENT_TIMESTAMP AT TIME ZONE 'UTC')
+                    ORDER BY created_at DESC
+                    LIMIT 1
+                    """,
+                    (rs, rowNum) ->
+                            new VerificationToken(
+                                    rs.getInt("id"),
+                                    rs.getString(
+                                            "token_hash"
+                                    )
+                            ),
+                    userId
+            );
+
+        } catch (EmptyResultDataAccessException e) {
+            return badRequest(
+                    "Invalid or expired verification code."
+            );
+        }
+
+        if (token == null
+                || !passwordEncoder.matches(
+                        request.code().trim(),
+                        token.tokenHash()
+                )) {
+
+            return badRequest(
+                    "Invalid or expired verification code."
+            );
+        }
+
+        jdbc.update(
+                """
+                UPDATE verification_tokens
+                SET used_at = CURRENT_TIMESTAMP
+                WHERE id = ?
+                """,
+                token.id()
+        );
+
+        jdbc.update(
+                """
+                UPDATE users
+                SET email_verified_at = CURRENT_TIMESTAMP
+                WHERE id = ?
+                """,
+                userId
+        );
+
+        return ResponseEntity.ok(
+                Map.of(
+                        "message",
+                        "Email verified."
+                )
+        );
+    }
+
+    @PostMapping("/resend")
+    public ResponseEntity<?> resend(
+            @RequestBody ResendRequest request
+    ) {
+        if (request.email() == null
+                || !EMAIL_PATTERN.matcher(
+                        request.email().trim()
+                ).matches()) {
+
+            return badRequest(
+                    "A valid email is required."
+            );
+        }
+
+        String email = request.email()
+                .trim()
+                .toLowerCase(Locale.ROOT);
+
+        Integer userId;
+
+        try {
+            userId = jdbc.queryForObject(
+                    """
+                    SELECT id
+                    FROM users
+                    WHERE email = ?
+                    """,
+                    Integer.class,
+                    email
+            );
+
+        } catch (EmptyResultDataAccessException e) {
+            return badRequest(
+                    "Account not found."
+            );
+        }
+
+        sendVerificationCode(
+                userId,
+                email
+        );
+
+        return ResponseEntity.ok(
+                Map.of(
+                        "message",
+                        "Verification code sent."
+                )
+        );
     }
 
     @PostMapping("/login")
@@ -155,7 +347,8 @@ public class AuthController {
                         email,
                         password_hash,
                         first_name,
-                        last_name
+                        last_name,
+                        email_verified_at
                     FROM users
                     WHERE email = ?
                     """,
@@ -171,6 +364,10 @@ public class AuthController {
                                     ),
                                     rs.getString(
                                             "last_name"
+                                    ),
+                                    rs.getObject(
+                                            "email_verified_at",
+                                            LocalDateTime.class
                                     )
                             ),
                     email
@@ -186,6 +383,17 @@ public class AuthController {
                         user.passwordHash()
                 )) {
             return unauthorized();
+        }
+
+        if (user.emailVerifiedAt() == null) {
+            return ResponseEntity
+                    .status(HttpStatus.FORBIDDEN)
+                    .body(
+                            Map.of(
+                                    "message",
+                                    "Verify your email before signing in."
+                            )
+                    );
         }
 
         HttpSession oldSession =
@@ -322,6 +530,42 @@ public class AuthController {
         );
     }
 
+    private void sendVerificationCode(
+            int userId,
+            String email
+    ) {
+        String code =
+                "%06d".formatted(
+                        RANDOM.nextInt(1_000_000)
+                );
+
+        jdbc.update(
+                """
+                INSERT INTO verification_tokens
+                (user_id, channel, token_hash, expires_at)
+                VALUES (?, 'EMAIL', ?, (CURRENT_TIMESTAMP AT TIME ZONE 'UTC') + INTERVAL '10 minutes')
+                """,
+                userId,
+                passwordEncoder.encode(code)
+        );
+
+        SimpleMailMessage message =
+                new SimpleMailMessage();
+
+        message.setTo(email);
+
+        message.setSubject(
+                "AlgoRent verification code"
+        );
+
+        message.setText(
+                "Your AlgoRent verification code is: "
+                        + code
+        );
+
+        mailSender.send(message);
+    }
+
     private ResponseEntity<?> badRequest(
             String message
     ) {
@@ -359,12 +603,30 @@ public class AuthController {
     ) {
     }
 
+    public record VerifyRequest(
+            String email,
+            String code
+    ) {
+    }
+
+    public record ResendRequest(
+            String email
+    ) {
+    }
+
+    private record VerificationToken(
+            int id,
+            String tokenHash
+    ) {
+    }
+
     private record UserRow(
             int id,
             String email,
             String passwordHash,
             String firstName,
-            String lastName
+            String lastName,
+            LocalDateTime emailVerifiedAt
     ) {
     }
 

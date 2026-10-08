@@ -36,11 +36,13 @@ export default function LoginPage() {
   const objRouter = useRouter();
 
   const [blnSignUp, setBlnSignUp] = useState(false);
+  const [blnVerifying, setBlnVerifying] = useState(false);
   const [blnShowPass, setBlnShowPass] = useState(false);
 
   const [strName, setStrName] = useState("");
   const [strEmail, setStrEmail] = useState("");
   const [strPass, setStrPass] = useState("");
+  const [strCode, setStrCode] = useState("");
 
   const [strMsg, setStrMsg] = useState("");
   const [blnErr, setBlnErr] = useState(false);
@@ -48,6 +50,8 @@ export default function LoginPage() {
 
   function changeMode() {
     setBlnSignUp(!blnSignUp);
+    setBlnVerifying(false);
+    setStrCode("");
     setStrMsg("");
     setBlnErr(false);
   }
@@ -62,7 +66,10 @@ export default function LoginPage() {
       let strEndpoint = "login";
       let objBody: object = { email: strEmail, password: strPass };
 
-      if (blnSignUp == true) {
+      if (blnVerifying == true) {
+        strEndpoint = "verify";
+        objBody = { email: strEmail, code: strCode };
+      } else if (blnSignUp == true) {
         strEndpoint = "signup";
         objBody = { fullName: strName, email: strEmail, password: strPass };
       }
@@ -77,16 +84,27 @@ export default function LoginPage() {
       const objData = await objRes.json();
 
       if (objRes.ok == false) {
+        // 403 on sign in means the email isn't verified yet
+        if (blnSignUp == false && blnVerifying == false && objRes.status == 403) {
+          setBlnVerifying(true);
+        }
         setBlnErr(true);
-        setStrMsg(objData.message);
+        setStrMsg(objData.message || "Request failed.");
         return;
       }
 
-      if (blnSignUp == true) {
+      if (blnVerifying == true) {
+        setBlnVerifying(false);
         setBlnSignUp(false);
+        setStrCode("");
+        setStrPass("");
+        setStrMsg("Email verified. Sign in to continue.");
+        return;
+      } else if (blnSignUp == true) {
+        setBlnVerifying(true);
         setStrName("");
         setStrPass("");
-        setStrMsg("Account created. Sign in to continue.");
+        setStrMsg("Verification code sent to your email.");
         return;
       }
 
@@ -102,19 +120,57 @@ export default function LoginPage() {
     }
   }
 
+  async function handleResend() {
+    setStrMsg("");
+    setBlnErr(false);
+    setBlnLoading(true);
+
+    try {
+      const objRes = await fetch(`${strApiUrl}/api/auth/resend`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: strEmail }),
+      });
+
+      const objData = await objRes.json();
+
+      if (objRes.ok == false) {
+        setBlnErr(true);
+        setStrMsg(objData.message || "Unable to resend code.");
+        return;
+      }
+
+      setStrMsg("A new verification code was sent.");
+
+    } catch (objErr) {
+      console.log("couldnt reach backend", objErr);
+      setBlnErr(true);
+      setStrMsg("Unable to connect to the server.");
+    } finally {
+      setBlnLoading(false);
+    }
+  }
+
   const strInStyle = "h-[46px] rounded-[10px] border border-[#d1d5db] bg-white px-3.5 text-[15px] md:text-[15px] focus-visible:border-[#3f5b6e] focus-visible:ring-0";
   const strLblStyle = "text-sm font-semibold";
 
   let strHeading = "Sign in";
+  let strSubText = "";
+  let strBtnText = "Sign in";
   let strSwitchText = "Don't have an account?";
   let strSwitchLink = "Create one";
-  if (blnSignUp == true) {
+
+  if (blnVerifying == true) {
+    strHeading = "Verify your email";
+    strSubText = `Enter the code sent to ${strEmail}.`;
+    strBtnText = "Verify email";
+  } else if (blnSignUp == true) {
     strHeading = "Create an account";
+    strBtnText = "Create account";
     strSwitchText = "Already have an account?";
     strSwitchLink = "Sign in";
   }
 
-  let strBtnText = strHeading == "Sign in" ? "Sign in" : "Create account";
   if (blnLoading == true) {
     strBtnText = "Please wait...";
   }
@@ -131,29 +187,43 @@ export default function LoginPage() {
         <Card className="fade-in w-full max-w-[400px] gap-0 rounded-[18px] border border-white/80 bg-white/80 p-9 text-base text-[#1c2733] shadow-[0_10px_30px_rgba(63,91,110,0.15)] ring-0 backdrop-blur-xl">
           <form onSubmit={handleSubmit} className="flex flex-col gap-[18px]">
 
-            <h1 className="text-[26px] font-extrabold">{strHeading}</h1>
+            <div>
+              <h1 className="text-[26px] font-extrabold">{strHeading}</h1>
+              {strSubText != "" && <p className="mt-1 text-sm text-[#4a5866]">{strSubText}</p>}
+            </div>
 
-            {blnSignUp == true && (
+            {blnSignUp == true && blnVerifying == false && (
               <div className="flex flex-col gap-1.5">
                 <Label htmlFor="name" className={strLblStyle}>Full name</Label>
                 <Input id="name" value={strName} onChange={(evt) => setStrName(evt.target.value)} className={strInStyle} required />
               </div>
             )}
 
-            <div className="flex flex-col gap-1.5">
-              <Label htmlFor="email" className={strLblStyle}>Email</Label>
-              <Input id="email" type="email" value={strEmail} onChange={(evt) => setStrEmail(evt.target.value)} placeholder="you@ufl.edu" className={strInStyle} required />
-            </div>
-
-            <div className="flex flex-col gap-1.5">
-              <Label htmlFor="password" className={strLblStyle}>Password</Label>
-              <div className="flex h-[46px] items-center rounded-[10px] border border-[#d1d5db] bg-white pl-3.5 pr-1.5">
-                <Input id="password" type={blnShowPass == true ? "text" : "password"} value={strPass} onChange={(evt) => setStrPass(evt.target.value)} className="h-full flex-1 border-none bg-transparent px-0 text-[15px] md:text-[15px] focus-visible:ring-0" required />
-                <Button type="button" onClick={() => setBlnShowPass(!blnShowPass)} className="h-[34px] rounded-lg bg-[#eef1f4] px-3 text-[13px] font-bold text-[#1c2733] hover:bg-[#e2e7ec]">
-                  {blnShowPass == true ? "Hide" : "Show"}
-                </Button>
+            {blnVerifying == false && (
+              <div className="flex flex-col gap-1.5">
+                <Label htmlFor="email" className={strLblStyle}>Email</Label>
+                <Input id="email" type="email" value={strEmail} onChange={(evt) => setStrEmail(evt.target.value)} placeholder="you@ufl.edu" className={strInStyle} required />
               </div>
-            </div>
+            )}
+
+            {blnVerifying == true && (
+              <div className="flex flex-col gap-1.5">
+                <Label htmlFor="code" className={strLblStyle}>Verification code</Label>
+                <Input id="code" value={strCode} onChange={(evt) => setStrCode(evt.target.value)} inputMode="numeric" pattern="[0-9]{6}" maxLength={6} className={strInStyle} required />
+              </div>
+            )}
+
+            {blnVerifying == false && (
+              <div className="flex flex-col gap-1.5">
+                <Label htmlFor="password" className={strLblStyle}>Password</Label>
+                <div className="flex h-[46px] items-center rounded-[10px] border border-[#d1d5db] bg-white pl-3.5 pr-1.5">
+                  <Input id="password" type={blnShowPass == true ? "text" : "password"} value={strPass} onChange={(evt) => setStrPass(evt.target.value)} className="h-full flex-1 border-none bg-transparent px-0 text-[15px] md:text-[15px] focus-visible:ring-0" required />
+                  <Button type="button" onClick={() => setBlnShowPass(!blnShowPass)} className="h-[34px] rounded-lg bg-[#eef1f4] px-3 text-[13px] font-bold text-[#1c2733] hover:bg-[#e2e7ec]">
+                    {blnShowPass == true ? "Hide" : "Show"}
+                  </Button>
+                </div>
+              </div>
+            )}
 
             {strMsg != "" && (
               <p className={blnErr == true ? "text-sm text-red-600" : "text-sm text-[#3f5b6e]"}>{strMsg}</p>
@@ -163,12 +233,18 @@ export default function LoginPage() {
               {strBtnText}
             </Button>
 
-            <p className="text-center text-sm text-[#4a5866]">
-              {strSwitchText}{" "}
-              <Button type="button" onClick={changeMode} className="h-auto bg-transparent p-0 text-sm font-bold text-[#3f5b6e] hover:bg-transparent">
-                {strSwitchLink}
+            {blnVerifying == true ? (
+              <Button type="button" disabled={blnLoading} onClick={handleResend} className="h-11 rounded-[10px] border border-[#1c2733]/20 bg-transparent text-sm font-bold text-[#1c2733] hover:bg-white/60">
+                Resend code
               </Button>
-            </p>
+            ) : (
+              <p className="text-center text-sm text-[#4a5866]">
+                {strSwitchText}{" "}
+                <Button type="button" onClick={changeMode} className="h-auto bg-transparent p-0 text-sm font-bold text-[#3f5b6e] hover:bg-transparent">
+                  {strSwitchLink}
+                </Button>
+              </p>
+            )}
 
             <p className="text-center text-sm text-[#4a5866]">
               Just looking? <Link href="/search" className="font-bold text-[#1c2733]">Browse without an account</Link>
