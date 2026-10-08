@@ -24,47 +24,28 @@ type User = {
   lastName: string | null;
 };
 
-const listings = [
-  {
-    id: 1,
-    title: "Private room near campus",
-    price: 725,
-    dates: "May 1 – Aug 15",
-    distance: "0.4 mi to UF",
-  },
-  {
-    id: 2,
-    title: "Studio off Archer Rd",
-    price: 1050,
-    dates: "May 10 – Aug 10",
-    distance: "1.8 mi to UF",
-  },
-  {
-    id: 3,
-    title: "Room in 4BR townhouse",
-    price: 640,
-    dates: "Apr 28 – Aug 20",
-    distance: "2.3 mi to UF",
-  },
-  {
-    id: 4,
-    title: "1BR apartment downtown",
-    price: 1200,
-    dates: "May 5 – Aug 31",
-    distance: "1.1 mi to UF",
-  },
-];
+type Listing = {
+  id: number;
+  title: string;
+  city: string;
+  state: string | null;
+  monthlyRent: number | null;
+  availableFrom: string | null;
+  availableUntil: string | null;
+  };
+
+type SearchResponse = { results: Listing[];};
 
 const featureCard =
   "flex-row items-center gap-3.5 rounded-[18px] bg-[#eefaf8] p-[18px] text-base text-[#111418] shadow-none ring-0";
 
 export default function Home() {
 
-  const [user, setUser] =
-    useState<User | null>(null);
-
-  const [authChecked, setAuthChecked] =
-    useState(false);
+  const [user, setUser] = useState<User | null>(null);
+  const [authChecked, setAuthChecked] = useState(false);
+  const [listings, setListings] = useState<Listing[]>([]);
+  const [searching, setSearching] = useState(false);
+  const [searchError, setSearchError] = useState("");
 
   useEffect(() => {
 
@@ -102,6 +83,41 @@ export default function Home() {
     );
 
     setUser(null);
+  }
+  async function handleSearch(city: string, moveIn: string, moveOut: string) {
+    if ((moveIn && !moveOut) || (!moveIn && moveOut)) {
+      setSearchError("Choose both move-in and move-out dates.");
+      return;
+    }
+
+    setSearching(true);
+    setSearchError("");
+
+    const params = new URLSearchParams({ city });
+
+    if (moveIn && moveOut) {
+      params.set("moveIn", moveIn);
+      params.set("moveOut", moveOut);
+    }
+
+    try {
+      const response = await fetch(
+        `${API_URL}/api/listings/search?${params}`
+      );
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        setSearchError(data.detail || "Search failed.");
+        return;
+      }
+
+      setListings((data as SearchResponse).results);
+    } catch {
+      setSearchError("Unable to connect to the server.");
+    } finally {
+      setSearching(false);
+    }
   }
 
   return (
@@ -209,7 +225,15 @@ export default function Home() {
         </div>
 
         <div className="relative mx-auto mb-10 w-full max-w-[1048px] px-4">
-          <SearchBar />
+          <SearchBar
+            onSearch={handleSearch}
+            loading={searching}
+          />
+          {searchError && (
+          <p className="mt-3 text-center text-sm text-red-200">
+            {searchError}
+          </p>
+          )}
         </div>
 
       </section>
@@ -291,11 +315,10 @@ export default function Home() {
               key={listing.id}
               id={listing.id}
               title={listing.title}
-              price={listing.price}
-              dates={listing.dates}
-              distance={listing.distance}
+              price={Number(listing.monthlyRent ?? 0)}
+              dates={listing.availableFrom && listing.availableUntil ? `${listing.availableFrom} – ${listing.availableUntil}` : "Flexible dates"}
+              distance={[listing.city, listing.state].filter(Boolean).join(", ")}
             />
-
           ))}
 
         </div>
