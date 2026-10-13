@@ -16,6 +16,10 @@
     "sqft": 942,
     "lease_type": "entire-place",
     "security_deposit": 500,
+    "photos": [
+      "https://images.example.com/listing-1/front.jpg",
+      "https://images.example.com/listing-1/kitchen.jpg"
+    ],
     "created_at": "2026-09-28T12:00:00Z"
   }
 ]

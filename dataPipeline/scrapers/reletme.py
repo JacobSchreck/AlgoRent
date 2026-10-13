@@ -10,7 +10,7 @@ import httpx
 FIELDS = (
     "id", "title", "city", "state", "zip", "address", "rent", "beds", "baths",
     "lease_start", "lease_end", "property_type", "pet_friendly", "sqft",
-    "lease_type", "security_deposit", "created_at",
+    "lease_type", "security_deposit", "photos", "created_at",
 )
 
 
@@ -99,10 +99,10 @@ class ReletMeClient:
 
 
 def source_url_builder(public_url: str, listing_url_template: str | None = None) -> Callable[[str], str]:
-    """Build source links without assuming ReletMe's client-side route."""
+    """Build the stable public ReletMe detail URL for a source listing id."""
 
     base_url = public_url.rstrip("/")
-    template = listing_url_template or base_url
+    template = listing_url_template or f"{base_url}/listing/{{external_id}}"
 
     def build(external_id: str) -> str:
         return template.format(external_id=external_id, id=external_id)

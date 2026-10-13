@@ -15,6 +15,13 @@ class NormalizeReletMeTest(unittest.TestCase):
             "lease_start": "2027-05-01", "lease_end": "2027-08-15",
             "property_type": "Apartment", "lease_type": "entire-place",
             "pet_friendly": False,
+            "photos": [
+                "https://images.example.com/front.jpg",
+                "not-a-url",
+                "https://images.example.com/front.jpg",
+                "http://images.example.com/insecure.jpg",
+                "https://images.example.com/kitchen.jpg",
+            ],
         }
 
         listing = normalize_reletme(raw, lambda item_id: f"https://example.com/{item_id}")
@@ -30,7 +37,21 @@ class NormalizeReletMeTest(unittest.TestCase):
         self.assertEqual(listing.listing_type, "entire_unit")
         self.assertFalse(listing.pets_allowed)
         self.assertIsNone(listing.furnished)
+        self.assertEqual(
+            listing.image_urls,
+            (
+                "https://images.example.com/front.jpg",
+                "https://images.example.com/kitchen.jpg",
+            ),
+        )
         self.assertEqual(validate_listing(listing), ())
+
+    def test_missing_or_malformed_photos_do_not_reject_listing(self) -> None:
+        for photos in (None, "https://images.example.com/not-a-list.jpg", [None, 42]):
+            raw = {"id": "listing-1", "title": "Valid", "city": "Austin", "photos": photos}
+            listing = normalize_reletme(raw, lambda item_id: f"https://example.com/{item_id}")
+            self.assertEqual(listing.image_urls, ())
+            self.assertEqual(validate_listing(listing), ())
 
     def test_rejects_invalid_listing_without_rejecting_the_batch(self) -> None:
         raw_records = [

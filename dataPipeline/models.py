@@ -27,6 +27,7 @@ class Listing:
     zip_code: str | None = None
     latitude: float | None = None
     longitude: float | None = None
+    image_urls: tuple[str, ...] = ()
     available_from: date | None = None
     available_until: date | None = None
     furnished: bool | None = None

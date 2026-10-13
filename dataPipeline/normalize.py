@@ -4,6 +4,7 @@ from collections.abc import Callable, Iterable
 from datetime import date
 from decimal import Decimal, InvalidOperation
 from typing import Any
+from urllib.parse import urlparse
 
 try:
     from .models import Listing, ValidationFailure, validate_listing
@@ -82,6 +83,26 @@ def _canonical(value: Any, vocabulary: dict[str, str]) -> str | None:
     return vocabulary.get(text.lower(), "other")
 
 
+def _image_urls(value: Any) -> tuple[str, ...]:
+    """Keep unique public HTTPS image URLs in source display order."""
+
+    if not isinstance(value, list):
+        return ()
+
+    urls: list[str] = []
+    seen: set[str] = set()
+    for item in value:
+        url = _text(item)
+        if url is None or url in seen:
+            continue
+        parsed = urlparse(url)
+        if parsed.scheme != "https" or not parsed.netloc:
+            continue
+        seen.add(url)
+        urls.append(url)
+    return tuple(urls)
+
+
 def normalize_reletme(raw: dict[str, Any], build_source_url: Callable[[str], str]) -> Listing:
     """Convert one intentionally limited ReletMe record to AlgoRent's model."""
 
@@ -102,6 +123,7 @@ def normalize_reletme(raw: dict[str, Any], build_source_url: Callable[[str], str
         city=_text(raw.get("city")),
         state=_text(raw.get("state")),
         zip_code=_text(raw.get("zip")),
+        image_urls=_image_urls(raw.get("photos")),
         available_from=_date(raw.get("lease_start")),
         available_until=_date(raw.get("lease_end")),
         furnished=None,

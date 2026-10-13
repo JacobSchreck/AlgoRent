@@ -2,7 +2,11 @@ import unittest
 
 import httpx
 
-from dataPipeline.scrapers.reletme import ReletMeClient, ReletMeResponseError
+from dataPipeline.scrapers.reletme import (
+    ReletMeClient,
+    ReletMeResponseError,
+    source_url_builder,
+)
 
 
 class ReletMeClientTest(unittest.IsolatedAsyncioTestCase):
@@ -13,6 +17,7 @@ class ReletMeClientTest(unittest.IsolatedAsyncioTestCase):
             ranges.append(request.headers["Range"])
             self.assertEqual(request.url.params["status"], "eq.active")
             self.assertIn("id", request.url.params["select"])
+            self.assertIn("photos", request.url.params["select"])
             self.assertEqual(request.headers["apikey"], "test-key")
             self.assertEqual(request.headers["Prefer"], "count=exact")
             if request.headers["Range"] == "0-1":
@@ -68,6 +73,24 @@ class ReletMeClientTest(unittest.IsolatedAsyncioTestCase):
         )
         with self.assertRaisesRegex(ReletMeResponseError, "duplicate"):
             await duplicate.fetch_active_listings()
+
+
+class ReletMeSourceUrlTest(unittest.TestCase):
+    def test_builds_public_listing_detail_url_by_default(self) -> None:
+        build_url = source_url_builder("https://reletme.com/")
+
+        self.assertEqual(
+            build_url("df05f6c7-f60f-423d-9463-f1fed6c38b56"),
+            "https://reletme.com/listing/df05f6c7-f60f-423d-9463-f1fed6c38b56",
+        )
+
+    def test_supports_an_explicit_route_override(self) -> None:
+        build_url = source_url_builder(
+            "https://reletme.com",
+            "https://example.com/properties/{id}",
+        )
+
+        self.assertEqual(build_url("listing-1"), "https://example.com/properties/listing-1")
 
 
 if __name__ == "__main__":

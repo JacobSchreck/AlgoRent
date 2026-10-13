@@ -23,6 +23,13 @@ ReletMe public Supabase query
 PostgreSQL -> Spring search API -> Next.js frontend
 ```
 
+ReletMe photo URLs are stored in `listing_images` in source order. The pipeline stores URL text
+only; it does not download or duplicate image files. Search results use the first URL as the
+thumbnail, while the listing detail endpoint returns the ordered gallery.
+
+Each listing's `source_url` points to ReletMe's public `/listing/{external_id}` detail page so the
+AlgoRent UI can send a user to the original source record.
+
 ReletMe-specific field names stop at `normalize.py`. The database contract deliberately matches the
 existing Spring search endpoint: ReletMe's `lease_end` becomes `available_until`, `lease_type`
 becomes canonical `listing_type`, and `pet_friendly` becomes `pets_allowed`.
@@ -89,6 +96,7 @@ python -m unittest discover -s dataPipeline/tests -v
 - HTTP failures, rate limits, malformed JSON, and database failures produce a non-zero CLI exit.
 - Each live fetch requests Supabase's exact active-row count and rejects incomplete or duplicate results.
 - All valid listings in one run are UPSERTed in one database transaction.
+- A listing's ordered image rows are rewritten only when its public source photo list changes.
 - A failed fetch or database batch never marks existing listings inactive.
 - Missing source records are not deactivated in this first version. Add that only after multiple
   successful production runs establish a safe freshness window.

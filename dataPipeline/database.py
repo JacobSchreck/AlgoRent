@@ -20,6 +20,36 @@ load_dotenv()
 class UpsertResult:
     inserted: int
     updated: int
+    images: int
+
+
+def _sync_listing_images(
+    cur: psycopg.Cursor, listing_id: int, image_urls: tuple[str, ...],
+) -> None:
+    """Replace image rows only when the ordered source list changed."""
+
+    cur.execute(
+        """
+        SELECT image_url
+        FROM listing_images
+        WHERE listing_id = %s
+        ORDER BY display_order ASC NULLS LAST, id ASC
+        """,
+        (listing_id,),
+    )
+    existing = tuple(row[0] for row in cur.fetchall())
+    if existing == image_urls:
+        return
+
+    cur.execute("DELETE FROM listing_images WHERE listing_id = %s", (listing_id,))
+    if image_urls:
+        cur.executemany(
+            """
+            INSERT INTO listing_images (listing_id, image_url, display_order)
+            VALUES (%s, %s, %s)
+            """,
+            ((listing_id, url, order) for order, url in enumerate(image_urls)),
+        )
 
 
 def get_connection() -> psycopg.Connection:
@@ -62,6 +92,7 @@ def upsert_listings(source_id: int, listings: Iterable[Listing]) -> UpsertResult
 
     inserted = 0
     updated = 0
+    images = 0
     with get_connection() as conn:
         with conn.cursor() as cur:
             for listing in listings:
@@ -109,7 +140,7 @@ def upsert_listings(source_id: int, listings: Iterable[Listing]) -> UpsertResult
                         status = 'ACTIVE',
                         last_seen_at = CURRENT_TIMESTAMP,
                         updated_at = CURRENT_TIMESTAMP
-                    RETURNING (xmax = 0) AS inserted
+                    RETURNING id, (xmax = 0) AS inserted
                     """,
                     (
                         source_id, listing.external_id, listing.source_url, listing.title,
@@ -122,8 +153,11 @@ def upsert_listings(source_id: int, listings: Iterable[Listing]) -> UpsertResult
                         listing.laundry_available, listing.pets_allowed,
                     ),
                 )
-                if cur.fetchone()[0]:
+                listing_id, was_inserted = cur.fetchone()
+                if was_inserted:
                     inserted += 1
                 else:
                     updated += 1
-    return UpsertResult(inserted=inserted, updated=updated)
+                _sync_listing_images(cur, listing_id, listing.image_urls)
+                images += len(listing.image_urls)
+    return UpsertResult(inserted=inserted, updated=updated, images=images)

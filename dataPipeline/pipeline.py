@@ -38,6 +38,7 @@ class PipelineResult:
     invalid: int
     inserted: int
     updated: int
+    images: int
     source_count_verified: bool
 
 
@@ -59,7 +60,7 @@ async def run_reletme_pipeline(
     *, fixture: Path | None = None, dry_run: bool = False,
 ) -> PipelineResult:
     public_url = os.getenv("RELETME_PUBLIC_URL", "https://reletme.com").strip()
-    listing_url = os.getenv("RELETME_LISTING_URL_TEMPLATE") or f"{public_url.rstrip('/')}/listings"
+    listing_url = os.getenv("RELETME_LISTING_URL_TEMPLATE")
     build_url = source_url_builder(public_url, listing_url)
 
     if fixture is not None:
@@ -79,7 +80,8 @@ async def run_reletme_pipeline(
 
     if dry_run:
         return PipelineResult(
-            len(raw_records), len(listings), len(failures), 0, 0, fixture is None,
+            len(raw_records), len(listings), len(failures), 0, 0,
+            sum(len(listing.image_urls) for listing in listings), fixture is None,
         )
 
     source_id = upsert_source("ReletMe", public_url, "PROPERTY_SITE")
@@ -89,7 +91,7 @@ async def run_reletme_pipeline(
 
     return PipelineResult(
         len(raw_records), len(listings), len(failures), persisted.inserted, persisted.updated,
-        fixture is None,
+        persisted.images, fixture is None,
     )
 
 
@@ -109,6 +111,7 @@ def main() -> None:
     print(f"Invalid:    {result.invalid}")
     print(f"Inserted:   {result.inserted}")
     print(f"Updated:    {result.updated}")
+    print(f"Images:     {result.images}")
     if result.source_count_verified:
         print("Source count verified against Supabase's exact total.")
     print("Dry run complete; no database changes were made." if args.dry_run else "Ingestion complete.")
