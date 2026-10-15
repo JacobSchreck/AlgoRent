@@ -65,16 +65,26 @@ Finds active listings in a city, optionally for a stay (move-in to move-out) and
 | `minBedrooms` | number | Studios have 0 bedrooms. |
 | `furnished` | `true`/`false` | |
 | `utilitiesIncluded` | `true`/`false` | |
-| `sort` | text | `price_asc` (default), `price_desc`, `newest`, `available_soonest`. Listings without a price or date sort last. |
+| `lat`, `lng` | number | A point to measure from, such as a campus or workplace. Give both or neither. Adds `distanceMiles` to every result. |
+| `radiusMiles` | number | Only listings within this many miles of `lat`/`lng` (more than 0, at most 100). Needs `lat` and `lng`. Listings without coordinates are left out. |
+| `sort` | text | `price_asc` (default), `price_desc`, `newest`, `available_soonest`, `distance` (nearest first; needs `lat` and `lng`). Listings without a price, date or location sort last. |
 | `page` | integer | Starts at 0. Default 0. |
 | `size` | integer | 1 to 100. Default 20. |
 
 **Date matching:** a listing matches when it is available for the whole stay: `available_from` on or before `moveIn`, and `available_until` on or after `moveOut`. A listing with no `available_from` or `available_until` counts as open on that side, because scraped listings often leave dates out.
 
+**Distance:** straight-line ("as the crow flies") miles from `lat`/`lng`, rounded to 2 decimals. `distanceMiles` is `null` when the search has no location or the listing has no coordinates.
+
 **Example**
 
 ```
 GET /api/listings/search?city=Gainesville&moveIn=2027-05-15&moveOut=2027-08-10&maxRent=900&furnished=true
+```
+
+Within 3 miles of UF (Century Tower), nearest first:
+
+```
+GET /api/listings/search?city=Gainesville&lat=29.6487&lng=-82.3433&radiusMiles=3&sort=distance
 ```
 
 ```json
@@ -100,7 +110,8 @@ GET /api/listings/search?city=Gainesville&moveIn=2027-05-15&moveOut=2027-08-10&m
       "availableUntil": "2027-08-31",
       "sourceUrl": "https://example.com/1",
       "sourceName": "Test Source",
-      "thumbnailUrl": "https://img.example.com/1-first.jpg"
+      "thumbnailUrl": "https://img.example.com/1-first.jpg",
+      "distanceMiles": null
     }
   ],
   "page": 0,

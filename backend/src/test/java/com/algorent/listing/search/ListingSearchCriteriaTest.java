@@ -71,7 +71,7 @@ class ListingSearchCriteriaTest {
                         .containsExactly(
                                 "minRent must not be greater than maxRent",
                                 "minBedrooms must be 0 or more",
-                                "sort must be one of: price_asc, price_desc, newest, available_soonest",
+                                "sort must be one of: price_asc, price_desc, newest, available_soonest, distance",
                                 "page must be 0 or more",
                                 "size must be between 1 and 100"));
     }
@@ -90,5 +90,60 @@ class ListingSearchCriteriaTest {
                 "Austin", null, null, null, null, null, null, null, null, null, null, null, Integer.MAX_VALUE, 100);
 
         assertThat(criteria.offset()).isEqualTo(214_748_364_700L);
+    }
+
+    @Test
+    void acceptsALocationWithRadiusAndDistanceSort() {
+        ListingSearchCriteria criteria = ListingSearchCriteria.of(
+                "Gainesville", null, null, null, null, null, null, null, null, null, null,
+                29.6487, -82.3433, 3.0, "distance", null, null);
+
+        assertThat(criteria.hasLocation()).isTrue();
+        assertThat(criteria.radiusMiles()).isEqualTo(3.0);
+        assertThat(criteria.sort()).isEqualTo(ListingSort.DISTANCE);
+    }
+
+    @Test
+    void searchWithoutLocationHasNone() {
+        ListingSearchCriteria criteria = ListingSearchCriteria.of(
+                "Gainesville", null, null, null, null, null, null, null, null, null, null, null, null, null);
+
+        assertThat(criteria.hasLocation()).isFalse();
+        assertThat(criteria.latitude()).isNull();
+    }
+
+    @Test
+    void requiresLatAndLngTogether() {
+        assertThatThrownBy(() -> ListingSearchCriteria.of(
+                "Gainesville", null, null, null, null, null, null, null, null, null, null,
+                29.6487, null, null, null, null, null))
+                .isInstanceOfSatisfying(InvalidSearchException.class,
+                        ex -> assertThat(ex.getErrors()).containsExactly("lat and lng must be provided together"));
+    }
+
+    @Test
+    void radiusAndDistanceSortNeedALocation() {
+        assertThatThrownBy(() -> ListingSearchCriteria.of(
+                "Gainesville", null, null, null, null, null, null, null, null, null, null,
+                null, null, 5.0, "distance", null, null))
+                .isInstanceOfSatisfying(InvalidSearchException.class, ex -> assertThat(ex.getErrors())
+                        .containsExactly("radiusMiles needs lat and lng", "sort=distance needs lat and lng"));
+    }
+
+    @Test
+    void rejectsOutOfRangeLocationAndRadius() {
+        assertThatThrownBy(() -> ListingSearchCriteria.of(
+                "Gainesville", null, null, null, null, null, null, null, null, null, null,
+                91.0, -181.0, 150.0, null, null, null))
+                .isInstanceOfSatisfying(InvalidSearchException.class, ex -> assertThat(ex.getErrors())
+                        .containsExactly(
+                                "lat must be between -90 and 90",
+                                "lng must be between -180 and 180",
+                                "radiusMiles must be more than 0 and at most 100"));
+
+        assertThatThrownBy(() -> ListingSearchCriteria.of(
+                "Gainesville", null, null, null, null, null, null, null, null, null, null,
+                29.6, -82.3, 0.0, null, null, null))
+                .isInstanceOf(InvalidSearchException.class);
     }
 }

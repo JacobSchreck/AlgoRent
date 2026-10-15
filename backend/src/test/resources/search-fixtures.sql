@@ -35,3 +35,12 @@ INSERT INTO listing_images (listing_id, image_url, display_order) VALUES
     (1, 'https://img.example.com/1-second.jpg', 2),
     (1, 'https://img.example.com/1-first.jpg', 1),
     (2, 'https://img.example.com/2.jpg', 0);
+
+-- Coordinates for location search. Reference point: Century Tower, UF (29.6487, -82.3433).
+-- Listing 3 has no coordinates on purpose (like most scraped listings today).
+UPDATE listings SET latitude = 29.6520, longitude = -82.3400 WHERE id = 1;  -- ~0.3 mi
+UPDATE listings SET latitude = 29.6800, longitude = -82.3600 WHERE id = 2;  -- ~2.3 mi
+UPDATE listings SET latitude = 29.7500, longitude = -82.2500 WHERE id = 4;  -- ~9 mi
+UPDATE listings SET latitude = 29.6490, longitude = -82.3430 WHERE id = 5;  -- next door, but REMOVED
+UPDATE listings SET latitude = 29.6200, longitude = -82.3800 WHERE id = 6;  -- ~2.9 mi
+UPDATE listings SET latitude = 30.2672, longitude = -97.7431 WHERE id = 7;  -- Austin

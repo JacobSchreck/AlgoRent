@@ -54,6 +54,7 @@ public class ListingSearchRepository {
                 rs.getObject("available_until", LocalDate.class),
                 rs.getString("source_url"),
                 rs.getString("source_name"),
-                rs.getString("thumbnail_url"));
+                rs.getString("thumbnail_url"),
+                rs.getBigDecimal("distance_miles"));
     }
 }

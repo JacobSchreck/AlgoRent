@@ -14,6 +14,8 @@ import org.springframework.web.bind.annotation.RestController;
  *
  * <p>Example: {@code GET /api/listings/search?city=Gainesville&moveIn=2027-05-15&moveOut=2027-08-10&maxRent=900}
  *
+ * <p>Near a place: {@code GET /api/listings/search?city=Gainesville&lat=29.6487&lng=-82.3433&radiusMiles=3&sort=distance}
+ *
  * <p>See backend/README.md for every parameter and the response shape.
  */
 @RestController
@@ -39,13 +41,16 @@ public class ListingSearchController {
             @RequestParam(required = false) BigDecimal minBedrooms,
             @RequestParam(required = false) Boolean furnished,
             @RequestParam(required = false) Boolean utilitiesIncluded,
+            @RequestParam(required = false) Double lat,
+            @RequestParam(required = false) Double lng,
+            @RequestParam(required = false) Double radiusMiles,
             @RequestParam(required = false) String sort,
             @RequestParam(required = false) Integer page,
             @RequestParam(required = false) Integer size) {
 
         ListingSearchCriteria criteria = ListingSearchCriteria.of(
                 city, state, moveIn, moveOut, minRent, maxRent, propertyType, listingType,
-                minBedrooms, furnished, utilitiesIncluded, sort, page, size);
+                minBedrooms, furnished, utilitiesIncluded, lat, lng, radiusMiles, sort, page, size);
 
         return repository.search(criteria);
     }
