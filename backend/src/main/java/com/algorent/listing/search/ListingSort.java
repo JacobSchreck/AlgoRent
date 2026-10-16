@@ -17,7 +17,9 @@ public enum ListingSort {
     PRICE_ASC("price_asc", "l.monthly_rent ASC NULLS LAST, l.id ASC"),
     PRICE_DESC("price_desc", "l.monthly_rent DESC NULLS LAST, l.id ASC"),
     NEWEST("newest", "l.first_seen_at DESC, l.id DESC"),
-    AVAILABLE_SOONEST("available_soonest", "l.available_from ASC NULLS LAST, l.id ASC");
+    AVAILABLE_SOONEST("available_soonest", "l.available_from ASC NULLS LAST, l.id ASC"),
+    /** Nearest first. Only valid when the search has a location (lat and lng). */
+    DISTANCE("distance", "geo.distance_miles ASC NULLS LAST, l.id ASC");
 
     public static final ListingSort DEFAULT = PRICE_ASC;
 
