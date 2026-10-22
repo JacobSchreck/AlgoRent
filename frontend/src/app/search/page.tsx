@@ -40,8 +40,8 @@ function SearchResults() {
   const objRouter = useRouter();
   const objParams = useSearchParams();
   const strCity = objParams.get("city") || "Gainesville";
-  const strStart = objParams.get("start") || "";
-  const strEnd = objParams.get("end") || "";
+  const strMoveIn = objParams.get("moveIn") || "";
+  const strMoveOut = objParams.get("moveOut") || "";
 
   const [strMaxRent, setStrMaxRent] = useState("");
   const [strBeds, setStrBeds] = useState("");
@@ -61,9 +61,9 @@ function SearchResults() {
       setStrErr("");
 
       const objQuery = new URLSearchParams({ city: strCity, size: "50", sort: strSort });
-      if (strStart != "" && strEnd != "") {
-        objQuery.set("moveIn", strStart);
-        objQuery.set("moveOut", strEnd);
+      if (strMoveIn != "" && strMoveOut != "") {
+        objQuery.set("moveIn", strMoveIn);
+        objQuery.set("moveOut", strMoveOut);
       }
       if (strMaxRent != "") {
         objQuery.set("maxRent", strMaxRent);
@@ -98,7 +98,7 @@ function SearchResults() {
       }
     }
     loadResults();
-  }, [strCity, strStart, strEnd, strMaxRent, strBeds, strRoomType, strProperty, strSort]);
+  }, [strCity, strMoveIn, strMoveOut, strMaxRent, strBeds, strRoomType, strProperty, strSort]);
 
   function toggleCompare(numId: number) {
     if (arrCompare.includes(numId) == true) {
@@ -132,14 +132,14 @@ function SearchResults() {
   let strTitle = `Places in ${strCity}`;
 
   let strDates = "";
-  if (strStart != "" && strEnd != "") {
-    strDates = ` · ${strStart} to ${strEnd}`;
+  if (strMoveIn != "" && strMoveOut != "") {
+    strDates = ` · ${strMoveIn} to ${strMoveOut}`;
   }
 
   return (
     <>
       <div className="fade-in flex flex-col gap-4 pt-6">
-        <SearchBar />
+        <SearchBar loading={blnLoading} />
 
         <div className="flex flex-wrap items-center gap-2.5">
           <select value={strMaxRent} onChange={(evt) => setStrMaxRent(evt.target.value)} aria-label="Price" className={strMaxRent != "" ? strSelOn : strSelOff}>
@@ -210,7 +210,7 @@ function SearchResults() {
                 price={objList.monthlyRent == null ? null : Number(objList.monthlyRent)}
                 dates={showDates(objList.availableFrom, objList.availableUntil)}
                 distance={objList.distanceMiles != null ? `${objList.distanceMiles.toFixed(1)} mi away` : showPlace(objList.city, objList.state)}
-                photo={objList.thumbnailUrl}
+                thumbnailUrl={objList.thumbnailUrl}
               />
               <label className="flex items-center gap-2 text-[13px] font-semibold">
                 <input type="checkbox" checked={arrCompare.includes(objList.id)} onChange={() => toggleCompare(objList.id)} className="h-4 w-4 accent-[#3f5b6e]" />
@@ -223,7 +223,7 @@ function SearchResults() {
         {/* map */}
         <div className="fade-in delay-2 relative h-[520px] flex-1 overflow-hidden rounded-[22px] border border-white/60 bg-white/35 lg:sticky lg:top-24">
           <div className="absolute inset-0">
-            <ListingMap arrPins={arrPins} arrPicked={arrCompare} />
+            <ListingMap arrPins={arrPins} arrPicked={arrCompare} strCity={strCity} />
           </div>
 
           {arrResults.length > 0 && arrPins.length == 0 && (
@@ -238,7 +238,7 @@ function SearchResults() {
               {arrCompare.length == 0 ? "Check a few places to compare" : `${arrCompare.length} picked to compare`}
             </span>
             {arrCompare.length >= 2 && (
-              <Button type="button" onClick={() => objRouter.push(`/compare?ids=${arrCompare.join(",")}&start=${strStart}&end=${strEnd}`)} className="h-10 rounded-full bg-[#3f5b6e] px-[18px] text-[13px] font-bold text-white hover:bg-[#34495a]">
+              <Button type="button" onClick={() => objRouter.push(`/compare?ids=${arrCompare.join(",")}&start=${strMoveIn}&end=${strMoveOut}`)} className="h-10 rounded-full bg-[#3f5b6e] px-[18px] text-[13px] font-bold text-white hover:bg-[#34495a]">
                 Compare
               </Button>
             )}
@@ -254,6 +254,8 @@ export default function SearchPage() {
   return (
     <div className={`${objFont.className} bg-drift min-h-screen text-[#1c2733]`}>
       <style>{strPageCss}</style>
+
+      {/* z-[1100] keeps the nav above the map when you scroll */}
       <nav className="sticky top-0 z-[1100] border-b border-white/35 bg-white/25 backdrop-blur-lg">
         <div className="mx-auto flex h-16 max-w-[1232px] items-center justify-between px-8">
           <Link href="/" className="text-[18px] font-bold tracking-tight">AlgoRent</Link>
@@ -267,7 +269,6 @@ export default function SearchPage() {
       </nav>
 
       <div className="mx-auto max-w-[1232px] px-8">
-        {/* useSearchParams needs Suspense around it in Next.js */}
         <Suspense fallback={<p className="pt-6 text-[#4a5866]">Loading...</p>}>
           <SearchResults />
         </Suspense>

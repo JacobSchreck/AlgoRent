@@ -57,6 +57,7 @@ export default function ListingPage() {
   const [blnSaved, setBlnSaved] = useState(false);
   const [blnCompare, setBlnCompare] = useState(false);
 
+  // get this listing from the backend
   useEffect(() => {
     async function loadListing() {
       setBlnLoading(true);
@@ -79,6 +80,7 @@ export default function ListingPage() {
     loadListing();
   }, [strId]);
 
+  // check if this place was saved before
   useEffect(() => {
     const arrHave = getSaved();
     if (arrHave.find((objItem) => objItem.id == Number(strId)) != undefined) {
@@ -146,6 +148,14 @@ export default function ListingPage() {
     arrPhotos = objList.imageUrls;
   }
 
+  let strWhere = "";
+  if (objList != null) {
+    strWhere = `${showPlace(objList.city, objList.state)} ${objList.zipCode ?? ""}`;
+    if (objList.address != null && objList.address != "") {
+      strWhere = `${objList.address}, ${strWhere}`;
+    }
+  }
+
   return (
     <div className={`${objFont.className} bg-drift min-h-screen pb-16 text-[#1c2733]`}>
       <style>{strPageCss}</style>
@@ -197,7 +207,7 @@ export default function ListingPage() {
             <div className="fade-in delay-1 flex flex-1 flex-col gap-[22px]">
               <div className="flex flex-col gap-2">
                 <h1 className="text-[40px] font-semibold leading-[1.08] tracking-[-1px] text-[#24313d]">{objList.title}</h1>
-                <p className="text-[15px] text-[#4a5866]">{showPlace(objList.city, objList.state)} {objList.zipCode}</p>
+                <p className="text-[15px] text-[#4a5866]">{strWhere}</p>
               </div>
 
               <div className="grid gap-3 sm:grid-cols-3">
@@ -242,15 +252,13 @@ export default function ListingPage() {
                     <ListingMap arrPins={[{ id: objList.id, price: numRent, lat: objList.latitude, lng: objList.longitude }]} arrPicked={[objList.id]} />
                   </div>
                 ) : (
-                  <p className="text-[15px] text-[#4a5866]">
-                    {showPlace(objList.city, objList.state)} {objList.zipCode}. The exact spot isn&apos;t listed yet.
-                  </p>
+                  <p className="text-[15px] text-[#4a5866]">{strWhere}. The exact spot isn&apos;t listed yet.</p>
                 )}
               </div>
 
               <Card className="max-w-[640px] flex-row items-center gap-3.5 rounded-2xl border border-white/60 bg-white/50 p-4 text-base text-[#1c2733] shadow-none ring-0">
                 <span className="flex h-11 w-11 items-center justify-center rounded-full bg-[#3f5b6e] text-[15px] font-semibold text-white">
-                  {(objList.contactName || "H").charAt(0)}
+                  {(objList.contactName || "H").charAt(0).toUpperCase()}
                 </span>
                 <div>
                   <p className="text-[15px] font-semibold">{objList.contactName || "Host"}</p>
