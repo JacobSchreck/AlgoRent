@@ -7,10 +7,9 @@ import SearchBar from "@/components/SearchBar";
 import ListingCard from "@/components/ListingCard";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { strApiUrl, ListingSummary, showDates, showPlace } from "@/lib/listings";
 
 const objFont = Plus_Jakarta_Sans({ subsets: ["latin"], weight: ["500", "600", "700", "800"] });
-
-const strApiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
 
 type User = {
   id: number;
@@ -18,27 +17,6 @@ type User = {
   firstName: string | null;
   lastName: string | null;
 };
-
-// what the search API sends back for each listing
-type Listing = {
-  id: number;
-  title: string;
-  city: string;
-  state: string | null;
-  monthlyRent: number | null;
-  availableFrom: string | null;
-  availableUntil: string | null;
-};
-
-type SearchResponse = { results: Listing[] };
-
-// shown before anyone searches
-const arrSample = [
-  { id: 1, title: "Private room near campus", price: 725, dates: "May 1 – Aug 15", distance: "0.4 mi to UF" },
-  { id: 2, title: "Studio off Archer Rd", price: 1050, dates: "May 10 – Aug 10", distance: "1.8 mi to UF" },
-  { id: 3, title: "Room in 4BR townhouse", price: 640, dates: "Apr 28 – Aug 20", distance: "2.3 mi to UF" },
-  { id: 4, title: "1BR apartment downtown", price: 1200, dates: "May 5 – Aug 31", distance: "1.1 mi to UF" },
-];
 
 const strCardStyle = "reveal flex-row items-start gap-3 rounded-none border-none bg-transparent p-0 text-base text-[#1c2733] shadow-none ring-0";
 const strIconStyle = "flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white/60 text-[#3f5b6e]";
@@ -72,12 +50,7 @@ const strPageCss = `
 export default function Home() {
   const [objUser, setObjUser] = useState<User | null>(null);
   const [blnChecked, setBlnChecked] = useState(false);
-
-  const [arrResults, setArrResults] = useState<Listing[]>([]);
-  const [blnSearching, setBlnSearching] = useState(false);
-  const [blnSearched, setBlnSearched] = useState(false);
-  const [strSearchErr, setStrSearchErr] = useState("");
-  const [strResultCity, setStrResultCity] = useState("");
+  const [arrNearUf, setArrNearUf] = useState<ListingSummary[]>([]);
 
   useEffect(() => {
     async function checkUsr() {
@@ -96,6 +69,22 @@ export default function Home() {
     checkUsr();
   }, []);
 
+  // show a few real Gainesville listings at the bottom
+  useEffect(() => {
+    async function loadNearUf() {
+      try {
+        const objRes = await fetch(`${strApiUrl}/api/listings/search?city=Gainesville&size=4`);
+        if (objRes.ok == true) {
+          const objData = await objRes.json();
+          setArrNearUf(objData.results);
+        }
+      } catch (objErr) {
+        console.log("couldnt reach backend", objErr);
+      }
+    }
+    loadNearUf();
+  }, []);
+
   async function handleLogOut() {
     try {
       await fetch(`${strApiUrl}/api/auth/logout`, {
@@ -106,47 +95,6 @@ export default function Home() {
       console.log("couldnt reach backend", objErr);
     }
     setObjUser(null);
-  }
-
-  async function handleSearch(strCity: string, strMoveIn: string, strMoveOut: string) {
-    // the API needs both dates or neither
-    if ((strMoveIn != "" && strMoveOut == "") || (strMoveIn == "" && strMoveOut != "")) {
-      setStrSearchErr("Choose both move-in and move-out dates.");
-      return;
-    }
-
-    setBlnSearching(true);
-    setStrSearchErr("");
-
-    const objParams = new URLSearchParams({ city: strCity });
-    if (strMoveIn != "" && strMoveOut != "") {
-      objParams.set("moveIn", strMoveIn);
-      objParams.set("moveOut", strMoveOut);
-    }
-
-    try {
-      const objRes = await fetch(`${strApiUrl}/api/listings/search?${objParams}`);
-      const objData = await objRes.json();
-
-      if (objRes.ok == false) {
-        setStrSearchErr(objData.detail || "Search failed.");
-        return;
-      }
-
-      setArrResults((objData as SearchResponse).results);
-      setStrResultCity(strCity);
-      setBlnSearched(true);
-    } catch (objErr) {
-      console.log("couldnt reach backend", objErr);
-      setStrSearchErr("Unable to connect to the server.");
-    } finally {
-      setBlnSearching(false);
-    }
-  }
-
-  let strListHeading = "Available near UF this summer";
-  if (blnSearched == true) {
-    strListHeading = `Results in ${strResultCity}`;
   }
 
   return (
@@ -189,10 +137,7 @@ export default function Home() {
         </p>
 
         {/* full width so it lines up with the row below */}
-        <div className="fade-in delay-2 mt-6 w-full">
-          <SearchBar onSearch={handleSearch} loading={blnSearching} />
-          {strSearchErr != "" && <p className="mt-3 text-sm text-red-600">{strSearchErr}</p>}
-        </div>
+        <div className="fade-in delay-2 mt-6 w-full"><SearchBar /></div>
       </section>
 
       {/* feature row */}
@@ -223,27 +168,20 @@ export default function Home() {
 
       <section className="mx-auto mt-20 max-w-[1232px] px-8">
         <div className="reveal mb-5 flex items-baseline justify-between">
-          <h2 className="text-[28px] font-semibold tracking-tight">{strListHeading}</h2>
-          <Link href="/search" className="text-[15px] font-semibold text-[#3f5b6e]">See all listings</Link>
+          <h2 className="text-[28px] font-semibold tracking-tight">Available near UF this summer</h2>
+          <Link href="/search?city=Gainesville" className="text-[15px] font-semibold text-[#3f5b6e]">See all listings</Link>
         </div>
 
-        {blnSearched == true && arrResults.length == 0 && (
-          <p className="text-[15px] text-[#4a5866]">No places found. Try a different city or dates.</p>
-        )}
-
         <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
-          {blnSearched == false && arrSample.map((objList) => (
-            <ListingCard key={objList.id} id={objList.id} title={objList.title} price={objList.price} dates={objList.dates} distance={objList.distance} />
-          ))}
-
-          {blnSearched == true && arrResults.map((objList) => (
+          {arrNearUf.map((objList) => (
             <ListingCard
               key={objList.id}
               id={objList.id}
               title={objList.title}
-              price={Number(objList.monthlyRent ?? 0)}
-              dates={objList.availableFrom != null && objList.availableUntil != null ? `${objList.availableFrom} – ${objList.availableUntil}` : "Flexible dates"}
-              distance={[objList.city, objList.state].filter(Boolean).join(", ")}
+              price={objList.monthlyRent == null ? null : Number(objList.monthlyRent)}
+              dates={showDates(objList.availableFrom, objList.availableUntil)}
+              distance={showPlace(objList.city, objList.state)}
+              photo={objList.thumbnailUrl}
             />
           ))}
         </div>

@@ -1,43 +1,115 @@
-export type Listing = {
+export const strApiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
+
+export type ListingSummary = {
   id: number;
   title: string;
-  price: number;
-  dates: string;
-  distance: string;
-  miles: number;
+  address: string | null;
   city: string;
-  type: string;
-  tags: string[];
-  about: string;
-  host: string;
-  mapX: number;
-  mapY: number;
+  state: string | null;
+  zipCode: string | null;
+  latitude: number | null;
+  longitude: number | null;
+  monthlyRent: number | null;
+  bedrooms: number | null;
+  bathrooms: number | null;
+  propertyType: string | null;
+  listingType: string | null;
+  furnished: boolean | null;
+  utilitiesIncluded: boolean | null;
+  availableFrom: string | null;
+  availableUntil: string | null;
+  sourceUrl: string;
+  sourceName: string | null;
+  thumbnailUrl: string | null;
+  distanceMiles: number | null;
 };
 
-// sample data for now, will come from the backend later
-export const arrListings: Listing[] = [
-  {
-    id: 1, title: "Private room near campus", price: 725, dates: "May 1 – Aug 15", distance: "0.4 mi to UF", miles: 0.4,
-    city: "Gainesville, FL", type: "Private room", tags: ["Private room", "Furnished", "Shared kitchen"],
-    about: "Bedroom in a 3BR apartment a short walk from campus. Kitchen and living room are shared with two other students.",
-    host: "Sample host", mapX: 30, mapY: 30,
-  },
-  {
-    id: 2, title: "Studio off Archer Rd", price: 1050, dates: "May 10 – Aug 10", distance: "1.8 mi to UF", miles: 1.8,
-    city: "Gainesville, FL", type: "Entire place", tags: ["Entire studio", "Furnished", "Utilities included"],
-    about: "Whole studio to yourself with a kitchenette and in-unit laundry. On the bus route to campus.",
-    host: "Sample host", mapX: 12, mapY: 66,
-  },
-  {
-    id: 3, title: "Room in 4BR townhouse", price: 640, dates: "Apr 28 – Aug 20", distance: "2.3 mi to UF", miles: 2.3,
-    city: "Gainesville, FL", type: "Private room", tags: ["Private room", "Parking", "Washer and dryer"],
-    about: "Room in a townhouse with three other students. Free parking spot included.",
-    host: "Sample host", mapX: 66, mapY: 74,
-  },
-  {
-    id: 4, title: "1BR apartment downtown", price: 1200, dates: "May 5 – Aug 31", distance: "1.1 mi to UF", miles: 1.1,
-    city: "Gainesville, FL", type: "Entire place", tags: ["Entire apartment", "Furnished", "Gym"],
-    about: "One bedroom apartment downtown, close to restaurants and the bus line.",
-    host: "Sample host", mapX: 70, mapY: 20,
-  },
-];
+// one listing from GET /api/listings/{id}
+export type ListingDetail = Omit<ListingSummary, "thumbnailUrl" | "distanceMiles"> & {
+  description: string | null;
+  securityDeposit: number | null;
+  squareFeet: number | null;
+  parkingAvailable: boolean | null;
+  laundryAvailable: boolean | null;
+  petsAllowed: boolean | null;
+  contactName: string | null;
+  status: string | null;
+  imageUrls: string[];
+};
+
+// "2026-08-15" -> "Aug 15, 2026"
+export function showDate(strDate: string | null) {
+  if (strDate == null) {
+    return "";
+  }
+  const objDate = new Date(strDate + "T00:00:00");
+  return objDate.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+}
+
+export function showDates(strFrom: string | null, strUntil: string | null) {
+  if (strFrom == null && strUntil == null) {
+    return "Flexible dates";
+  } else if (strFrom == null) {
+    return `Until ${showDate(strUntil)}`;
+  } else if (strUntil == null) {
+    return `From ${showDate(strFrom)}`;
+  }
+  return `${showDate(strFrom)} – ${showDate(strUntil)}`;
+}
+
+export function showMoney(numAmount: number | null) {
+  if (numAmount == null) {
+    return "Not listed";
+  }
+  return `$${Number(numAmount).toLocaleString()}`;
+}
+
+export function showYesNo(blnValue: boolean | null) {
+  if (blnValue == null) {
+    return "Not listed";
+  } else if (blnValue == true) {
+    return "Yes";
+  }
+  return "No";
+}
+
+// "entire_unit" -> "Entire place"
+export function showType(strType: string | null) {
+  if (strType == "entire_unit") {
+    return "Entire place";
+  } else if (strType == "private_room") {
+    return "Private room";
+  } else if (strType == "shared_room") {
+    return "Shared room";
+  } else if (strType == null) {
+    return "Not listed";
+  }
+  return "Other";
+}
+
+// 4 beds 4 baths -> "4 bed · 4 bath", 0 beds -> "Studio"
+export function showRooms(numBeds: number | null, numBaths: number | null) {
+  let strRooms = "";
+  if (numBeds == 0) {
+    strRooms = "Studio";
+  } else if (numBeds != null) {
+    strRooms = `${Number(numBeds)} bed`;
+  }
+  if (numBaths != null) {
+    if (strRooms != "") {
+      strRooms = strRooms + " · ";
+    }
+    strRooms = strRooms + `${Number(numBaths)} bath`;
+  }
+  if (strRooms == "") {
+    return "Not listed";
+  }
+  return strRooms;
+}
+
+export function showPlace(strCity: string, strState: string | null) {
+  if (strState == null) {
+    return strCity;
+  }
+  return `${strCity}, ${strState}`;
+}

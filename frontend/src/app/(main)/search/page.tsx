@@ -1,13 +1,15 @@
 "use client";
 
-import { Suspense, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import Link from "next/link";
+import dynamic from "next/dynamic";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Plus_Jakarta_Sans } from "next/font/google";
 import SearchBar from "@/components/SearchBar";
 import ListingCard from "@/components/ListingCard";
 import { Button } from "@/components/ui/button";
-import { arrListings } from "@/lib/listings";
+import { strApiUrl, ListingSummary, showDates, showPlace } from "@/lib/listings";
+const ListingMap = dynamic(() => import("@/components/ListingMap"), { ssr: false });
 
 const objFont = Plus_Jakarta_Sans({ subsets: ["latin"], weight: ["500", "600", "700", "800"] });
 
@@ -31,34 +33,72 @@ const strPageCss = `
   }
 `;
 
-const strChipOn = "h-9 rounded-[10px] border border-[#3f5b6e] bg-[#3f5b6e] px-3.5 text-[13px] font-semibold text-white hover:bg-[#34495a]";
-const strChipOff = "h-9 rounded-[10px] border border-white/70 bg-white/50 px-3.5 text-[13px] font-semibold text-[#1c2733] hover:bg-white/70";
+const strSelOn = "h-9 cursor-pointer rounded-full border border-[#3f5b6e] bg-[#3f5b6e] px-3.5 text-[13px] font-semibold text-white outline-none";
+const strSelOff = "h-9 cursor-pointer rounded-full border border-white/70 bg-white/50 px-3.5 text-[13px] font-semibold text-[#1c2733] outline-none hover:bg-white/70";
 
 function SearchResults() {
   const objRouter = useRouter();
   const objParams = useSearchParams();
-  const strCity = objParams.get("city") || "";
+  const strCity = objParams.get("city") || "Gainesville";
   const strStart = objParams.get("start") || "";
   const strEnd = objParams.get("end") || "";
 
-  const [blnCheap, setBlnCheap] = useState(false);
-  const [blnClose, setBlnClose] = useState(false);
-  const [blnWhole, setBlnWhole] = useState(false);
+  const [strMaxRent, setStrMaxRent] = useState("");
+  const [strBeds, setStrBeds] = useState("");
+  const [strRoomType, setStrRoomType] = useState("");
+  const [strProperty, setStrProperty] = useState("");
+  const [strSort, setStrSort] = useState("price_asc");
   const [arrCompare, setArrCompare] = useState<number[]>([]);
 
-  const arrResults = arrListings.filter((objList) => {
-    const strSearch = strCity.toLowerCase();
-    if (strSearch != "" && objList.city.toLowerCase().includes(strSearch) == false && objList.title.toLowerCase().includes(strSearch) == false) {
-      return false;
-    } else if (blnCheap == true && objList.price >= 1000) {
-      return false;
-    } else if (blnClose == true && objList.miles > 1) {
-      return false;
-    } else if (blnWhole == true && objList.type != "Entire place") {
-      return false;
+  const [arrResults, setArrResults] = useState<ListingSummary[]>([]);
+  const [blnLoading, setBlnLoading] = useState(true);
+  const [strErr, setStrErr] = useState("");
+
+  // ask the backend for listings every time the search or a filter changes
+  useEffect(() => {
+    async function loadResults() {
+      setBlnLoading(true);
+      setStrErr("");
+
+      const objQuery = new URLSearchParams({ city: strCity, size: "50", sort: strSort });
+      if (strStart != "" && strEnd != "") {
+        objQuery.set("moveIn", strStart);
+        objQuery.set("moveOut", strEnd);
+      }
+      if (strMaxRent != "") {
+        objQuery.set("maxRent", strMaxRent);
+      }
+      if (strBeds == "studio") {
+        objQuery.set("propertyType", "studio");
+      } else if (strBeds != "") {
+        objQuery.set("minBedrooms", strBeds);
+      }
+      if (strRoomType != "") {
+        objQuery.set("listingType", strRoomType);
+      }
+      if (strProperty != "" && strBeds != "studio") {
+        objQuery.set("propertyType", strProperty);
+      }
+
+      try {
+        const objRes = await fetch(`${strApiUrl}/api/listings/search?${objQuery}`);
+        const objData = await objRes.json();
+        if (objRes.ok == false) {
+          setStrErr(objData.detail || "Search failed.");
+          setArrResults([]);
+        } else {
+          setArrResults(objData.results);
+        }
+      } catch (objErr) {
+        console.log("couldnt reach backend", objErr);
+        setStrErr("Unable to connect to the server.");
+        setArrResults([]);
+      } finally {
+        setBlnLoading(false);
+      }
     }
-    return true;
-  });
+    loadResults();
+  }, [strCity, strStart, strEnd, strMaxRent, strBeds, strRoomType, strProperty, strSort]);
 
   function toggleCompare(numId: number) {
     if (arrCompare.includes(numId) == true) {
@@ -68,10 +108,28 @@ function SearchResults() {
     }
   }
 
-  let strTitle = "All places";
-  if (strCity != "") {
-    strTitle = `Places in ${strCity}`;
+  function clearFilters() {
+    setStrMaxRent("");
+    setStrBeds("");
+    setStrRoomType("");
+    setStrProperty("");
+    setStrSort("price_asc");
   }
+
+  let blnAnyFilter = false;
+  if (strMaxRent != "" || strBeds != "" || strRoomType != "" || strProperty != "") {
+    blnAnyFilter = true;
+  }
+
+  // only listings that have a location can go on the map
+  const arrPins: { id: number; price: number; lat: number; lng: number }[] = [];
+  for (const objList of arrResults) {
+    if (objList.latitude != null && objList.longitude != null) {
+      arrPins.push({ id: objList.id, price: Number(objList.monthlyRent ?? 0), lat: objList.latitude, lng: objList.longitude });
+    }
+  }
+
+  let strTitle = `Places in ${strCity}`;
 
   let strDates = "";
   if (strStart != "" && strEnd != "") {
@@ -80,28 +138,80 @@ function SearchResults() {
 
   return (
     <>
-      <div className="fade-in flex flex-col gap-3.5 px-8 pt-5">
-        <div className="w-full max-w-[730px]"><SearchBar /></div>
+      <div className="fade-in flex flex-col gap-4 pt-6">
+        <SearchBar />
 
         <div className="flex flex-wrap items-center gap-2.5">
-          <Button type="button" onClick={() => setBlnCheap(!blnCheap)} className={blnCheap == true ? strChipOn : strChipOff}>Under $1,000</Button>
-          <Button type="button" onClick={() => setBlnClose(!blnClose)} className={blnClose == true ? strChipOn : strChipOff}>Within 1 mi</Button>
-          <Button type="button" onClick={() => setBlnWhole(!blnWhole)} className={blnWhole == true ? strChipOn : strChipOff}>Entire place</Button>
-          <span className="ml-2 text-sm text-[#4a5866]">{arrResults.length} places · {strTitle}{strDates}</span>
+          <select value={strMaxRent} onChange={(evt) => setStrMaxRent(evt.target.value)} aria-label="Price" className={strMaxRent != "" ? strSelOn : strSelOff}>
+            <option value="">Any price</option>
+            <option value="749">Under $750</option>
+            <option value="999">Under $1,000</option>
+            <option value="1499">Under $1,500</option>
+          </select>
+
+          <select value={strBeds} onChange={(evt) => setStrBeds(evt.target.value)} aria-label="Bedrooms" className={strBeds != "" ? strSelOn : strSelOff}>
+            <option value="">Any bedrooms</option>
+            <option value="studio">Studio</option>
+            <option value="1">1+ bed</option>
+            <option value="2">2+ beds</option>
+            <option value="3">3+ beds</option>
+          </select>
+
+          <select value={strRoomType} onChange={(evt) => setStrRoomType(evt.target.value)} aria-label="Room type" className={strRoomType != "" ? strSelOn : strSelOff}>
+            <option value="">Any room type</option>
+            <option value="entire_unit">Entire place</option>
+            <option value="private_room">Private room</option>
+            <option value="shared_room">Shared room</option>
+          </select>
+
+          <select value={strProperty} onChange={(evt) => setStrProperty(evt.target.value)} aria-label="Property" className={strProperty != "" ? strSelOn : strSelOff}>
+            <option value="">Any property</option>
+            <option value="apartment">Apartment</option>
+            <option value="house">House</option>
+            <option value="studio">Studio</option>
+          </select>
+
+          {blnAnyFilter == true && (
+            <Button type="button" onClick={clearFilters} className="h-9 bg-transparent px-2 text-[13px] font-semibold text-[#3f5b6e] hover:bg-transparent">Clear</Button>
+          )}
+        </div>
+
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <span className="text-sm text-[#4a5866]">
+            {blnLoading == true ? "Searching..." : `${arrResults.length} places · ${strTitle}${strDates}`}
+          </span>
+          <label className="flex items-center gap-2 text-[13px] text-[#4a5866]">
+            Sort by
+            <select value={strSort} onChange={(evt) => setStrSort(evt.target.value)} className={strSelOff}>
+              <option value="price_asc">Lowest price</option>
+              <option value="price_desc">Highest price</option>
+              <option value="newest">Newest</option>
+              <option value="available_soonest">Available soonest</option>
+            </select>
+          </label>
         </div>
       </div>
 
-      <div className="flex flex-col gap-6 px-8 pb-8 pt-5 lg:flex-row">
+      <div className="flex flex-col gap-6 pb-10 pt-5 lg:flex-row">
 
         {/* results */}
         <div className="fade-in delay-1 grid flex-1 content-start gap-5 sm:grid-cols-2 lg:max-w-[640px]">
-          {arrResults.length == 0 && (
+          {strErr != "" && <p className="text-[15px] text-red-600">{strErr}</p>}
+
+          {blnLoading == false && strErr == "" && arrResults.length == 0 && (
             <p className="text-[15px] text-[#4a5866]">No places match that. Try a different city or turn off a filter.</p>
           )}
 
           {arrResults.map((objList) => (
             <div key={objList.id} className="flex flex-col gap-2">
-              <ListingCard id={objList.id} title={objList.title} price={objList.price} dates={objList.dates} distance={objList.distance} />
+              <ListingCard
+                id={objList.id}
+                title={objList.title}
+                price={objList.monthlyRent == null ? null : Number(objList.monthlyRent)}
+                dates={showDates(objList.availableFrom, objList.availableUntil)}
+                distance={objList.distanceMiles != null ? `${objList.distanceMiles.toFixed(1)} mi away` : showPlace(objList.city, objList.state)}
+                photo={objList.thumbnailUrl}
+              />
               <label className="flex items-center gap-2 text-[13px] font-semibold">
                 <input type="checkbox" checked={arrCompare.includes(objList.id)} onChange={() => toggleCompare(objList.id)} className="h-4 w-4 accent-[#3f5b6e]" />
                 Compare
@@ -111,28 +221,24 @@ function SearchResults() {
         </div>
 
         {/* map */}
-        <div className="fade-in delay-2 relative h-[520px] flex-1 overflow-hidden rounded-[22px] border border-white/60 bg-white/35 backdrop-blur-md lg:sticky lg:top-20">
-          <span className="absolute left-[47%] top-[46%] rounded-full bg-[#3f5b6e] px-3 py-1.5 text-[13px] font-bold text-white">UF</span>
+        <div className="fade-in delay-2 relative h-[520px] flex-1 overflow-hidden rounded-[22px] border border-white/60 bg-white/35 lg:sticky lg:top-24">
+          <div className="absolute inset-0">
+            <ListingMap arrPins={arrPins} arrPicked={arrCompare} />
+          </div>
 
-          {arrResults.map((objList) => (
-            <Link
-              key={objList.id}
-              href={`/listings/${objList.id}`}
-              style={{ left: `${objList.mapX}%`, top: `${objList.mapY}%` }}
-              className={arrCompare.includes(objList.id) == true
-                ? "absolute rounded-full bg-[#3f5b6e] px-2.5 py-1 text-[13px] font-bold text-white shadow"
-                : "absolute rounded-full bg-white px-2.5 py-1 text-[13px] font-bold text-[#1c2733] shadow"}
-            >
-              ${objList.price.toLocaleString()}
-            </Link>
-          ))}
+          {arrResults.length > 0 && arrPins.length == 0 && (
+            <p className="absolute left-14 top-4 z-[1000] rounded-full bg-white/90 px-3.5 py-1.5 text-[13px] font-medium text-[#4a5866]">
+              Map spots aren&apos;t in the listing data yet
+            </p>
+          )}
 
-          <div className="absolute bottom-4 left-4 right-4 flex items-center justify-between rounded-[14px] border border-white/90 bg-white/80 py-3 pl-[18px] pr-3">
+          {/* z-[1000] keeps the bar on top of the map */}
+          <div className="absolute bottom-4 left-4 right-4 z-[1000] flex items-center justify-between rounded-[14px] border border-white/90 bg-white/85 py-3 pl-[18px] pr-3">
             <span className="text-sm font-semibold">
               {arrCompare.length == 0 ? "Check a few places to compare" : `${arrCompare.length} picked to compare`}
             </span>
             {arrCompare.length >= 2 && (
-              <Button type="button" onClick={() => objRouter.push(`/compare?ids=${arrCompare.join(",")}`)} className="h-10 rounded-[10px] bg-[#3f5b6e] px-[18px] text-[13px] font-bold text-white hover:bg-[#34495a]">
+              <Button type="button" onClick={() => objRouter.push(`/compare?ids=${arrCompare.join(",")}&start=${strStart}&end=${strEnd}`)} className="h-10 rounded-full bg-[#3f5b6e] px-[18px] text-[13px] font-bold text-white hover:bg-[#34495a]">
                 Compare
               </Button>
             )}
@@ -148,21 +254,24 @@ export default function SearchPage() {
   return (
     <div className={`${objFont.className} bg-drift min-h-screen text-[#1c2733]`}>
       <style>{strPageCss}</style>
-
-      <nav className="sticky top-0 z-10 flex h-16 items-center justify-between border-b border-white/50 bg-white/40 px-8 backdrop-blur-lg">
-        <Link href="/" className="text-[18px] font-extrabold tracking-tight">AlgoRent</Link>
-        <div className="flex items-center gap-6 text-[14px] font-medium">
-          <Link href="/search" className="font-bold">Search</Link>
-          <Link href="/saved">Saved</Link>
-          <Link href="/messages">Messages</Link>
-          <Link href="/login">Sign in</Link>
+      <nav className="sticky top-0 z-[1100] border-b border-white/35 bg-white/25 backdrop-blur-lg">
+        <div className="mx-auto flex h-16 max-w-[1232px] items-center justify-between px-8">
+          <Link href="/" className="text-[18px] font-bold tracking-tight">AlgoRent</Link>
+          <div className="flex items-center gap-6 text-[14px] font-medium">
+            <Link href="/search" className="font-semibold">Search</Link>
+            <Link href="/saved">Saved</Link>
+            <Link href="/messages">Messages</Link>
+            <Link href="/login">Sign in</Link>
+          </div>
         </div>
       </nav>
 
-      {/* useSearchParams needs Suspense around it in Next.js */}
-      <Suspense fallback={<p className="px-8 pt-6 text-[#4a5866]">Loading...</p>}>
-        <SearchResults />
-      </Suspense>
+      <div className="mx-auto max-w-[1232px] px-8">
+        {/* useSearchParams needs Suspense around it in Next.js */}
+        <Suspense fallback={<p className="pt-6 text-[#4a5866]">Loading...</p>}>
+          <SearchResults />
+        </Suspense>
+      </div>
     </div>
   );
 }
