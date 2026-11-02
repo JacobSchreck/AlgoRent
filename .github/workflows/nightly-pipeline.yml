@@ -1,0 +1,45 @@
+name: Nightly listing update
+
+# Pulls new listings from our sources into the database every night.
+# 8:17 UTC is 3:17 AM Eastern (4:17 AM during daylight saving time).
+# It can also be started by hand from the Actions tab.
+#
+# Needs these repository secrets (Settings > Secrets and variables > Actions):
+#   DB_HOST, DB_PORT, DB_NAME, DB_USER, DB_PASSWORD  (the hosted database, not local Docker)
+#   RELETME_SUPABASE_URL, RELETME_ANON_KEY
+
+on:
+  schedule:
+    - cron: "17 8 * * *"
+  workflow_dispatch:
+
+# don't let two runs write to the database at once
+concurrency: listing-update
+
+jobs:
+  update-listings:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+
+      - name: Install requirements
+        run: pip install -r dataPipeline/requirements.txt
+
+      - name: Run tests
+        run: python -m unittest discover -s dataPipeline/tests -t .
+
+      - name: Update listings
+        env:
+          DB_HOST: ${{ secrets.DB_HOST }}
+          DB_PORT: ${{ secrets.DB_PORT }}
+          DB_NAME: ${{ secrets.DB_NAME }}
+          DB_USER: ${{ secrets.DB_USER }}
+          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+          RELETME_SUPABASE_URL: ${{ secrets.RELETME_SUPABASE_URL }}
+          RELETME_ANON_KEY: ${{ secrets.RELETME_ANON_KEY }}
+        run: python -m dataPipeline.scheduled
