@@ -105,3 +105,15 @@ python -m unittest discover -s dataPipeline/tests -v
 
 Before scheduling unattended ingestion, confirm ReletMe's terms and permitted reuse. Keep the query
 limited to the public listing endpoint and the fields declared in `scrapers/reletme.py`.
+
+## Nightly updates
+
+`.github/workflows/nightly-pipeline.yml` runs `python -m dataPipeline.scheduled` every night at about
+3 AM Eastern. That script runs every source listed in `SOURCES` in `scheduled.py`. If one source fails,
+the others still run and the GitHub run is marked as failed. You can also start it by hand from the
+Actions tab.
+
+The workflow needs repository secrets for the hosted database (`DB_HOST`, `DB_PORT`, `DB_NAME`,
+`DB_USER`, `DB_PASSWORD`) and for ReletMe (`RELETME_SUPABASE_URL`, `RELETME_ANON_KEY`).
+
+To add a new site, give it a pipeline function like `run_reletme_pipeline` and add it to `SOURCES`.
