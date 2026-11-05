@@ -16,16 +16,28 @@ try:
         upsert_listings,
         upsert_source,
     )
-    from .normalize import normalize_and_validate_reletme
+    from .normalize import (
+        normalize_and_validate_reletme,
+        normalize_and_validate_rotatingroom,
+        normalize_and_validate_subleaps,
+    )
     from .scrapers.reletme import ReletMeClient, source_url_builder
+    from .scrapers.rotatingroom import RotatingRoomClient
+    from .scrapers.subleaps import SubLeapsClient
 except ImportError:
     from database import (
         source_is_enabled,
         upsert_listings,
         upsert_source,
     )
-    from normalize import normalize_and_validate_reletme
+    from normalize import (
+        normalize_and_validate_reletme,
+        normalize_and_validate_rotatingroom,
+        normalize_and_validate_subleaps,
+    )
     from scrapers.reletme import ReletMeClient, source_url_builder
+    from scrapers.rotatingroom import RotatingRoomClient
+    from scrapers.subleaps import SubLeapsClient
 
 
 load_dotenv()
@@ -95,8 +107,77 @@ async def run_reletme_pipeline(
     )
 
 
+async def run_subleaps_pipeline(
+    *, fixture: Path | None = None, dry_run: bool = False,
+) -> PipelineResult:
+    public_url = os.getenv("SUBLEAPS_PUBLIC_URL", "https://subleaps.com").strip()
+    raw_records = (
+        load_fixture(fixture)
+        if fixture is not None
+        else await SubLeapsClient(base_url=public_url).fetch_active_listings()
+    )
+
+    listings, failures = normalize_and_validate_subleaps(raw_records)
+    if failures:
+        print("Rejected listings:")
+        for failure in failures:
+            print(f"  {failure.external_id or '<missing id>'}: {', '.join(failure.reasons)}")
+
+    if dry_run:
+        return PipelineResult(
+            len(raw_records), len(listings), len(failures), 0, 0,
+            sum(len(listing.image_urls) for listing in listings), fixture is None,
+        )
+
+    source_id = upsert_source("SubLeaps", public_url, "PROPERTY_SITE")
+    if not source_is_enabled(source_id):
+        raise RuntimeError("SubLeaps source is disabled in the sources table")
+    persisted = upsert_listings(source_id, listings)
+    return PipelineResult(
+        len(raw_records), len(listings), len(failures), persisted.inserted, persisted.updated,
+        persisted.images, fixture is None,
+    )
+
+
+async def run_rotatingroom_pipeline(
+    *, fixture: Path | None = None, dry_run: bool = False,
+) -> PipelineResult:
+    public_url = os.getenv("ROTATINGROOM_PUBLIC_URL", "https://rotatingroom.com").strip()
+    raw_records = (
+        load_fixture(fixture)
+        if fixture is not None
+        else await RotatingRoomClient(base_url=public_url).fetch_active_listings()
+    )
+
+    listings, failures = normalize_and_validate_rotatingroom(raw_records)
+    if failures:
+        print("Rejected listings:")
+        for failure in failures:
+            print(f"  {failure.external_id or '<missing id>'}: {', '.join(failure.reasons)}")
+
+    if dry_run:
+        return PipelineResult(
+            len(raw_records), len(listings), len(failures), 0, 0, 0, False,
+        )
+
+    # LINK_ONLY tells downstream clients to expose only title and source_url.
+    # Filter metadata remains available to local search queries.
+    source_id = upsert_source("RotatingRoom", public_url, "LINK_ONLY")
+    if not source_is_enabled(source_id):
+        raise RuntimeError("RotatingRoom source is disabled in the sources table")
+    persisted = upsert_listings(source_id, listings)
+    return PipelineResult(
+        len(raw_records), len(listings), len(failures), persisted.inserted, persisted.updated,
+        persisted.images, False,
+    )
+
+
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="Ingest public ReletMe listings into AlgoRent")
+    parser = argparse.ArgumentParser(description="Ingest public listings into AlgoRent")
+    parser.add_argument(
+        "--source", choices=("reletme", "subleaps", "rotatingroom"), default="reletme",
+        help="listing source to ingest (default: reletme)",
+    )
     parser.add_argument("--fixture", type=Path, help="read source records from a JSON fixture")
     parser.add_argument("--dry-run", action="store_true", help="fetch and validate without database writes")
     return parser.parse_args()
@@ -104,8 +185,14 @@ def parse_args() -> argparse.Namespace:
 
 def main() -> None:
     args = parse_args()
-    print("Starting ReletMe ingestion...")
-    result = asyncio.run(run_reletme_pipeline(fixture=args.fixture, dry_run=args.dry_run))
+    print(f"Starting {args.source} ingestion...")
+    runners = {
+        "reletme": run_reletme_pipeline,
+        "subleaps": run_subleaps_pipeline,
+        "rotatingroom": run_rotatingroom_pipeline,
+    }
+    runner = runners[args.source]
+    result = asyncio.run(runner(fixture=args.fixture, dry_run=args.dry_run))
     print(f"Fetched:    {result.fetched}")
     print(f"Valid:      {result.valid}")
     print(f"Invalid:    {result.invalid}")
@@ -113,7 +200,7 @@ def main() -> None:
     print(f"Updated:    {result.updated}")
     print(f"Images:     {result.images}")
     if result.source_count_verified:
-        print("Source count verified against Supabase's exact total.")
+        print("Fetched count verified against the source's reported total.")
     print("Dry run complete; no database changes were made." if args.dry_run else "Ingestion complete.")
 
 

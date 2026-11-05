@@ -5,34 +5,43 @@ to the canonical `Listing` model, validates the complete batch, and UPSERTs vali
 PostgreSQL schema used by the Spring backend.
 
 ```text
-ReletMe public Supabase query
-            |
-            v
-  scrapers/reletme.py  source transport and pagination
-            |
-            v
-      normalize.py     source names and values -> AlgoRent Listing
-            |
-            v
-       models.py       source-independent data and validation rules
-            |
-            v
-      database.py      transactional UPSERT by (source_id, external_id)
-            |
-            v
-PostgreSQL -> Spring search API -> Next.js frontend
+ReletMe API       SubLeaps HTML       RotatingRoom public index
+     |                  |                       |
+reletme.py          subleaps.py            rotatingroom.py
+     |                  |                       |
+     +------------------+-----------------------+
+                    |
+              normalize.py     source fields -> AlgoRent Listing
+                    |
+                models.py      source-independent validation
+                    |
+               database.py     UPSERT by (source_id, external_id)
+                    |
+       PostgreSQL -> Spring search API -> Next.js frontend
 ```
 
-ReletMe photo URLs are stored in `listing_images` in source order. The pipeline stores URL text
+Source photo URLs are stored in `listing_images` in source order. The pipeline stores URL text
 only; it does not download or duplicate image files. Search results use the first URL as the
 thumbnail, while the listing detail endpoint returns the ordered gallery.
 
 Each listing's `source_url` points to ReletMe's public `/listing/{external_id}` detail page so the
 AlgoRent UI can send a user to the original source record.
 
-ReletMe-specific field names stop at `normalize.py`. The database contract deliberately matches the
+Source-specific field names stop at `normalize.py`. The database contract deliberately matches the
 existing Spring search endpoint: ReletMe's `lease_end` becomes `available_until`, `lease_type`
 becomes canonical `listing_type`, and `pet_friendly` becomes `pets_allowed`.
+
+The SubLeaps adapter walks every `/browse` page, collects only UUID listing routes, and then reads
+each public detail page. It uses Product JSON-LD for core listing fields and the page payload for
+coordinates. Before returning anything, it checks that the number of unique links equals the result
+count reported by SubLeaps. Detail requests are concurrency-limited to avoid an unbounded burst.
+
+The RotatingRoom adapter covers the nationwide public listing index rather than one school or city.
+It checks every numeric listing route in the public sitemap, removes stale `404`/`410` entries, and
+checks a bounded range of newer IDs because the sitemap is generated periodically. It retains only
+title, source link, and fields needed for local filtering. Descriptions, images, exact addresses,
+and user/contact data are discarded. Its `sources.source_type` is `LINK_ONLY`, which downstream UI
+code must use to show only the listing title and outbound source link.
 
 | ReletMe | Canonical / PostgreSQL | Rule |
 | --- | --- | --- |
@@ -85,6 +94,29 @@ Run the live, read-only intake manually:
 python -m dataPipeline.pipeline
 ```
 
+Validate all live SubLeaps listings without writing to PostgreSQL:
+
+```powershell
+python -m dataPipeline.pipeline --source subleaps --dry-run
+```
+
+Ingest SubLeaps after reviewing the dry-run counts:
+
+```powershell
+python -m dataPipeline.pipeline --source subleaps
+```
+
+Validate or ingest the nationwide RotatingRoom public index:
+
+```powershell
+python -m dataPipeline.pipeline --source rotatingroom --dry-run
+python -m dataPipeline.pipeline --source rotatingroom
+```
+
+RotatingRoom's directory-wide marketing counter can exceed the number of publicly indexed detail
+pages. The pipeline reports that gap, but only imports active records discoverable through the
+public sitemap and bounded newer-ID scan. It does not claim that inaccessible records were fetched.
+
 Run tests:
 
 ```powershell
@@ -94,7 +126,7 @@ python -m unittest discover -s dataPipeline/tests -v
 ## Failure and freshness behavior
 
 - HTTP failures, rate limits, malformed JSON, and database failures produce a non-zero CLI exit.
-- Each live fetch requests Supabase's exact active-row count and rejects incomplete or duplicate results.
+- Each live fetch checks the source-reported total and rejects incomplete or duplicate results.
 - All valid listings in one run are UPSERTed in one database transaction.
 - A listing's ordered image rows are rewritten only when its public source photo list changes.
 - A failed fetch or database batch never marks existing listings inactive.
