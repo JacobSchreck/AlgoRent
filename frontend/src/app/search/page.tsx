@@ -211,16 +211,15 @@ function SearchResults() {
                 dates={showDates(objList.availableFrom, objList.availableUntil)}
                 distance={objList.distanceMiles != null ? `${objList.distanceMiles.toFixed(1)} mi away` : showPlace(objList.city, objList.state)}
                 thumbnailUrl={objList.thumbnailUrl}
-                sourceUrl={objList.sourceUrl}
                 sourceName={objList.sourceName}
                 sourceType={objList.sourceType}
               />
-              {objList.sourceType != "LINK_ONLY" && (
+              <div className="flex flex-wrap items-center gap-2">
                 <label className="flex items-center gap-2 text-[13px] font-semibold">
                   <input type="checkbox" checked={arrCompare.includes(objList.id)} onChange={() => toggleCompare(objList.id)} className="h-4 w-4 accent-[#3f5b6e]" />
                   Compare
                 </label>
-              )}
+              </div>
             </div>
           ))}
         </div>

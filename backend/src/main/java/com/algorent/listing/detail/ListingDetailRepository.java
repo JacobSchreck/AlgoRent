@@ -27,6 +27,7 @@ public class ListingDetailRepository {
             FROM listings l
             JOIN sources s ON s.id = l.source_id
             WHERE l.id = :id
+              AND l.flagged = FALSE
             """;
 
     static final String IMAGES_SQL = """

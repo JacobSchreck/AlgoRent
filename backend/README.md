@@ -71,7 +71,7 @@ Finds active listings in a city, optionally for a stay (move-in to move-out) and
 | `page` | integer | Starts at 0. Default 0. |
 | `size` | integer | 1 to 100. Default 20. |
 
-**Date matching:** a listing matches when it is available for the whole stay: `available_from` on or before `moveIn`, and `available_until` on or after `moveOut`. A listing with no `available_from` or `available_until` counts as open on that side, because scraped listings often leave dates out.
+**Date matching:** a listing matches when it is available for the whole stay: `available_from` on or before `moveIn`, and `available_until` on or after `moveOut`. A listing with no `available_from` or `available_until` counts as open on that side, because scraped listings often leave dates out. Listings with an approved flag are excluded.
 
 **Distance:** straight-line ("as the crow flies") miles from `lat`/`lng`, rounded to 2 decimals. `distanceMiles` is `null` when the search has no location or the listing has no coordinates.
 
@@ -158,12 +158,42 @@ Session-based sign-in. The browser must send cookies: `fetch(url, { credentials:
 | --- | --- | --- | --- |
 | `POST /api/auth/signup` | `{"fullName", "email", "password"}` | `201` | `400` invalid input (password under 8 characters, bad email), `409` email already used |
 | `POST /api/auth/login` | `{"email", "password"}` | `200`, starts a session | `400` missing fields, `401` wrong email or password |
-| `GET /api/auth/me` | none | `200` `{"id", "email", "firstName", "lastName"}` | `401` not signed in |
+| `GET /api/auth/me` | none | `200` `{"id", "email", "firstName", "lastName", "role"}` | `401` not signed in |
 | `POST /api/auth/logout` | none | `200`, ends the session | none |
 
 Emails are stored lower-case, and passwords are stored only as bcrypt hashes. Errors return `{"message": "..."}`.
 
 **Verification:** `users.email_verified_at` and `users.phone_verified_at` are `NULL` until the user verifies (migration V3). Verification codes go in `verification_tokens`. Store only a hash of each code, with an expiry, and set `used_at` once it has been used.
+
+### Listing moderation
+
+Signed-in users can submit one pending report per listing:
+
+```http
+POST /api/listings/42/flags
+Content-Type: application/json
+
+{"reason":"SCAM","details":"The contact requested payment off-platform."}
+```
+
+Valid reasons are `SCAM`, `INACCURATE`, `UNAVAILABLE`, `DUPLICATE`, `INAPPROPRIATE`, and `OTHER`. Details are optional and limited to 1,000 characters.
+
+Users with the `ADMIN` role can manage the queue. Approving a report sets the listing's `flagged`
+column to `TRUE`, closes its other pending reports, and removes the listing from search and detail
+responses. Dismissing a report leaves the listing visible.
+
+```http
+GET /api/moderation/flags
+PATCH /api/moderation/flags/{flagId}
+
+{"status":"APPROVED"}
+```
+
+Promote a trusted local account explicitly; public signup always creates a regular user:
+
+```sql
+UPDATE users SET role = 'ADMIN' WHERE email = 'admin@example.com';
+```
 
 ### `GET /actuator/health`
 

@@ -87,7 +87,8 @@ public final class ListingSearchSql {
 
     public ListingSearchSql(ListingSearchCriteria criteria) {
         Map<String, Object> params = new LinkedHashMap<>();
-        StringBuilder where = new StringBuilder("WHERE l.status = 'ACTIVE'\n");
+        StringBuilder where = new StringBuilder(
+                "WHERE l.status = 'ACTIVE' AND l.flagged = FALSE\n");
 
         where.append("  AND lower(l.city) = :city\n");
         params.put("city", criteria.city());

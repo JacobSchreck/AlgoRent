@@ -12,6 +12,8 @@ erDiagram
     listings ||--o{ inquiries : "asked about in"
     inquiries ||--o{ messages : logs
     users ||--o{ verification_tokens : verifies
+    users ||--o{ listing_flags : reports
+    listings ||--o{ listing_flags : receives
 
     users {
         serial id PK
@@ -19,6 +21,7 @@ erDiagram
         varchar password_hash
         varchar first_name
         varchar last_name
+        varchar role "USER or ADMIN"
         timestamp email_verified_at "NULL until verified"
         varchar phone
         timestamp phone_verified_at "NULL until verified"
@@ -66,6 +69,7 @@ erDiagram
         varchar contact_email
         varchar contact_phone
         varchar status "ACTIVE, ..."
+        boolean flagged "hidden after approved report"
         timestamp first_seen_at
         timestamp last_seen_at
         timestamp created_at
@@ -115,6 +119,18 @@ erDiagram
         timestamp used_at
         timestamp created_at
     }
+
+    listing_flags {
+        serial id PK
+        integer listing_id FK
+        integer reporter_user_id FK
+        varchar reason
+        text details
+        varchar status "PENDING, APPROVED, DISMISSED"
+        timestamp decided_at
+        timestamp created_at
+        timestamp updated_at
+    }
 ```
 
 ## Notes
@@ -122,5 +138,6 @@ erDiagram
 - **Availability** is stored on the listing (`available_from`, `available_until`), not in a separate table. Each scraped listing has a single date window. If we later need several windows per listing (calendar sync), that becomes its own table.
 - **Hosts are not users.** Listings come from other sites, so inquiries and messages belong to the guest. `messages.direction` records whether the guest sent the message or received it.
 - **Verification** (V3): a user is email- or phone-verified once `email_verified_at` / `phone_verified_at` is set. Each code sent is a `verification_tokens` row that stores only a hash and expires.
+- **Moderation** (V5): signed-in users can flag a listing once while their report is pending. Admins can approve or dismiss queued reports; approval sets `listings.flagged` and hides the listing.
 - **Deletes cascade** from users and listings to favorites, images, inquiries and messages.
 - **Search indexes** (V2) are partial indexes on `lower(city)` for `ACTIVE` listings, combined with dates and with rent.

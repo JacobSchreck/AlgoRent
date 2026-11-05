@@ -1,5 +1,9 @@
 -- Test data for ListingSearchApiTest. Reset before every test so ids are predictable.
-TRUNCATE messages, inquiries, favorites, listing_images, listings, sources, users RESTART IDENTITY CASCADE;
+TRUNCATE listing_flags, messages, inquiries, favorites, listing_images, listings, sources, users RESTART IDENTITY CASCADE;
+
+INSERT INTO users (email, password_hash, first_name, role, email_verified_at) VALUES
+    ('reporter@example.com', 'not-used', 'Reporter', 'USER', CURRENT_TIMESTAMP),
+    ('admin@example.com', 'not-used', 'Admin', 'ADMIN', CURRENT_TIMESTAMP);
 
 INSERT INTO sources (name, base_url, source_type) VALUES
     ('Test Source', 'https://example.com', 'PROPERTY_SITE'),

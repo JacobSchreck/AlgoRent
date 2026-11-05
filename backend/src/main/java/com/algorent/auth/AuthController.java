@@ -348,7 +348,8 @@ public class AuthController {
                         password_hash,
                         first_name,
                         last_name,
-                        email_verified_at
+                        email_verified_at,
+                        role
                     FROM users
                     WHERE email = ?
                     """,
@@ -368,7 +369,8 @@ public class AuthController {
                                     rs.getObject(
                                             "email_verified_at",
                                             LocalDateTime.class
-                                    )
+                                    ),
+                                    rs.getString("role")
                             ),
                     email
             );
@@ -418,7 +420,9 @@ public class AuthController {
                         "userId",
                         user.id(),
                         "email",
-                        user.email()
+                        user.email(),
+                        "role",
+                        user.role()
                 )
         );
     }
@@ -458,7 +462,8 @@ public class AuthController {
                                 id,
                                 email,
                                 first_name,
-                                last_name
+                                last_name,
+                                role
                             FROM users
                             WHERE id = ?
                             """,
@@ -473,7 +478,8 @@ public class AuthController {
                                             ),
                                             rs.getString(
                                                     "last_name"
-                                            )
+                                            ),
+                                            rs.getString("role")
                                     ),
                             userId
                     );
@@ -626,7 +632,8 @@ public class AuthController {
             String passwordHash,
             String firstName,
             String lastName,
-            LocalDateTime emailVerifiedAt
+            LocalDateTime emailVerifiedAt,
+            String role
     ) {
     }
 
@@ -634,7 +641,8 @@ public class AuthController {
             int id,
             String email,
             String firstName,
-            String lastName
+            String lastName,
+            String role
     ) {
     }
 }

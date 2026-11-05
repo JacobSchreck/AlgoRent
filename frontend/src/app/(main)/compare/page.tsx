@@ -6,7 +6,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Plus_Jakarta_Sans } from "next/font/google";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { strApiUrl, ListingDetail, showDates, showMoney, showRooms, showType, showYesNo } from "@/lib/listings";
+import { strApiUrl, ListingDetail, showDate, showMoney, showType, showYesNo } from "@/lib/listings";
 
 const objFont = Plus_Jakarta_Sans({ subsets: ["latin"], weight: ["500", "600", "700", "800"] });
 
@@ -31,6 +31,9 @@ const strPageCss = `
 const strRowLbl = "py-3.5 pr-4 text-sm font-medium text-[#4a5866]";
 const strCell = "py-3.5 pr-4 text-[15px]";
 const strBest = "ml-2 rounded-full bg-[#3f5b6e] px-2 py-0.5 text-xs font-semibold text-white";
+const strMissingInput = "h-9 w-full min-w-[120px] rounded-lg border border-[#3f5b6e]/35 bg-white/70 px-2.5 text-sm outline-none focus:border-[#3f5b6e]";
+
+type ComparisonDrafts = Record<number, Record<string, string>>;
 
 function CompareTable() {
   const objRouter = useRouter();
@@ -41,6 +44,7 @@ function CompareTable() {
 
   const [arrPicked, setArrPicked] = useState<ListingDetail[]>([]);
   const [blnLoading, setBlnLoading] = useState(true);
+  const [objDrafts, setObjDrafts] = useState<ComparisonDrafts>({});
 
   // get each picked listing from the backend (max 3)
   useEffect(() => {
@@ -53,9 +57,7 @@ function CompareTable() {
           const objRes = await fetch(`${strApiUrl}/api/listings/${strId}`);
           if (objRes.ok == true) {
             const objListing: ListingDetail = await objRes.json();
-            if (objListing.sourceType != "LINK_ONLY") {
-              arrFound.push(objListing);
-            }
+            arrFound.push(objListing);
           }
         } catch (objErr) {
           console.log("couldnt reach backend", objErr);
@@ -76,6 +78,48 @@ function CompareTable() {
     }
   }
 
+  function setDraft(numId: number, strField: string, strValue: string) {
+    setObjDrafts((objCurrent) => ({
+      ...objCurrent,
+      [numId]: { ...objCurrent[numId], [strField]: strValue },
+    }));
+  }
+
+  function getDraft(numId: number, strField: string) {
+    return objDrafts[numId]?.[strField] ?? "";
+  }
+
+  function editableInput(objList: ListingDetail, strField: string, strLabel: string, strType = "text") {
+    return (
+      <input
+        aria-label={`${strLabel} for ${objList.title}`}
+        type={strType}
+        min={strType == "number" ? "0" : undefined}
+        step={strType == "number" ? "0.01" : undefined}
+        value={getDraft(objList.id, strField)}
+        onChange={(evt) => setDraft(objList.id, strField, evt.target.value)}
+        placeholder={`Add ${strLabel.toLowerCase()}`}
+        className={strMissingInput}
+      />
+    );
+  }
+
+  function editableYesNo(objList: ListingDetail, strField: string, strLabel: string) {
+    return (
+      <select aria-label={`${strLabel} for ${objList.title}`} value={getDraft(objList.id, strField)} onChange={(evt) => setDraft(objList.id, strField, evt.target.value)} className={strMissingInput}>
+        <option value="">Choose</option>
+        <option value="yes">Yes</option>
+        <option value="no">No</option>
+      </select>
+    );
+  }
+
+  function comparisonRent(objList: ListingDetail) {
+    if (objList.monthlyRent != null) return Number(objList.monthlyRent);
+    const numDraft = Number(getDraft(objList.id, "monthlyRent"));
+    return Number.isFinite(numDraft) && numDraft > 0 ? numDraft : null;
+  }
+
   if (blnLoading == true) {
     return <p className="pt-10 text-[#4a5866]">Loading...</p>;
   }
@@ -93,8 +137,8 @@ function CompareTable() {
   // find the cheapest one so we can tag it
   let numCheapest = -1;
   for (const objList of arrPicked) {
-    if (objList.monthlyRent != null) {
-      const numRent = Number(objList.monthlyRent);
+    const numRent = comparisonRent(objList);
+    if (numRent != null) {
       if (numCheapest == -1 || numRent < numCheapest) {
         numCheapest = numRent;
       }
@@ -114,6 +158,7 @@ function CompareTable() {
             ← Back to results
           </Button>
           <h1 className="text-[36px] font-semibold tracking-[-1px] text-[#24313d]">Compare side by side</h1>
+          <p className="text-sm text-[#4a5866]">Missing values are temporary notes for this comparison and are not saved to the listing.</p>
         </div>
         {strForDates != "" && <p className="text-sm text-[#4a5866]">{strForDates}</p>}
       </div>
@@ -143,38 +188,52 @@ function CompareTable() {
               <td className={strRowLbl}>Monthly rent</td>
               {arrPicked.map((objList) => (
                 <td key={objList.id} className={strCell}>
-                  <span className="font-semibold">{showMoney(objList.monthlyRent)}</span>
-                  {objList.monthlyRent != null && Number(objList.monthlyRent) == numCheapest && arrPicked.length > 1 && <span className={strBest}>Best</span>}
+                  {objList.monthlyRent != null ? <span className="font-semibold">{showMoney(objList.monthlyRent)}</span> : editableInput(objList, "monthlyRent", "Monthly rent", "number")}
+                  {comparisonRent(objList) != null && comparisonRent(objList) == numCheapest && arrPicked.length > 1 && <span className={strBest}>Best</span>}
                 </td>
               ))}
             </tr>
             <tr>
               <td className={strRowLbl}>Available</td>
-              {arrPicked.map((objList) => <td key={objList.id} className={strCell}>{showDates(objList.availableFrom, objList.availableUntil)}</td>)}
+              {arrPicked.map((objList) => <td key={objList.id} className={strCell}>
+                <div className="flex flex-col gap-2">
+                  {objList.availableFrom != null ? <span>From {showDate(objList.availableFrom)}</span> : editableInput(objList, "availableFrom", "Available from", "date")}
+                  {objList.availableUntil != null ? <span>Until {showDate(objList.availableUntil)}</span> : editableInput(objList, "availableUntil", "Available until", "date")}
+                </div>
+              </td>)}
             </tr>
             <tr>
               <td className={strRowLbl}>Rooms</td>
-              {arrPicked.map((objList) => <td key={objList.id} className={strCell}>{showRooms(objList.bedrooms, objList.bathrooms)}</td>)}
+              {arrPicked.map((objList) => <td key={objList.id} className={strCell}>
+                <div className="flex flex-col gap-2">
+                  {objList.bedrooms != null ? <span>{Number(objList.bedrooms)} bed</span> : editableInput(objList, "bedrooms", "Bedrooms", "number")}
+                  {objList.bathrooms != null ? <span>{Number(objList.bathrooms)} bath</span> : editableInput(objList, "bathrooms", "Bathrooms", "number")}
+                </div>
+              </td>)}
             </tr>
             <tr>
               <td className={strRowLbl}>Room type</td>
-              {arrPicked.map((objList) => <td key={objList.id} className={strCell}>{showType(objList.listingType)}</td>)}
+              {arrPicked.map((objList) => <td key={objList.id} className={strCell}>{objList.listingType != null ? showType(objList.listingType) : (
+                <select aria-label={`Room type for ${objList.title}`} value={getDraft(objList.id, "listingType")} onChange={(evt) => setDraft(objList.id, "listingType", evt.target.value)} className={strMissingInput}>
+                  <option value="">Choose</option><option value="entire_unit">Entire place</option><option value="private_room">Private room</option><option value="shared_room">Shared room</option>
+                </select>
+              )}</td>)}
             </tr>
             <tr>
               <td className={strRowLbl}>Furnished</td>
-              {arrPicked.map((objList) => <td key={objList.id} className={strCell}>{showYesNo(objList.furnished)}</td>)}
+              {arrPicked.map((objList) => <td key={objList.id} className={strCell}>{objList.furnished != null ? showYesNo(objList.furnished) : editableYesNo(objList, "furnished", "Furnished")}</td>)}
             </tr>
             <tr>
               <td className={strRowLbl}>Utilities included</td>
-              {arrPicked.map((objList) => <td key={objList.id} className={strCell}>{showYesNo(objList.utilitiesIncluded)}</td>)}
+              {arrPicked.map((objList) => <td key={objList.id} className={strCell}>{objList.utilitiesIncluded != null ? showYesNo(objList.utilitiesIncluded) : editableYesNo(objList, "utilitiesIncluded", "Utilities included")}</td>)}
             </tr>
             <tr>
               <td className={strRowLbl}>Pets allowed</td>
-              {arrPicked.map((objList) => <td key={objList.id} className={strCell}>{showYesNo(objList.petsAllowed)}</td>)}
+              {arrPicked.map((objList) => <td key={objList.id} className={strCell}>{objList.petsAllowed != null ? showYesNo(objList.petsAllowed) : editableYesNo(objList, "petsAllowed", "Pets allowed")}</td>)}
             </tr>
             <tr>
               <td className={strRowLbl}>Deposit</td>
-              {arrPicked.map((objList) => <td key={objList.id} className={strCell}>{showMoney(objList.securityDeposit)}</td>)}
+              {arrPicked.map((objList) => <td key={objList.id} className={strCell}>{objList.securityDeposit != null ? showMoney(objList.securityDeposit) : editableInput(objList, "securityDeposit", "Deposit", "number")}</td>)}
             </tr>
             <tr>
               <td></td>
@@ -184,9 +243,11 @@ function CompareTable() {
                     <Button type="button" onClick={() => objRouter.push(`/listings/${objList.id}`)} className="h-10 rounded-full border border-[#1c2733]/20 bg-transparent px-4 text-sm font-semibold text-[#1c2733] hover:bg-white/60">
                       View
                     </Button>
-                    <Button type="button" onClick={() => objRouter.push("/messages")} className="h-10 rounded-full bg-[#3f5b6e] px-4 text-sm font-semibold text-white hover:bg-[#34495a]">
-                      Message
-                    </Button>
+                    {objList.sourceType == "LINK_ONLY" ? (
+                      <a href={objList.sourceUrl} target="_blank" rel="noopener noreferrer" className="flex h-10 items-center rounded-full bg-[#3f5b6e] px-4 text-sm font-semibold text-white hover:bg-[#34495a]">Open source</a>
+                    ) : (
+                      <Button type="button" onClick={() => objRouter.push("/messages")} className="h-10 rounded-full bg-[#3f5b6e] px-4 text-sm font-semibold text-white hover:bg-[#34495a]">Message</Button>
+                    )}
                     <Button type="button" onClick={() => removeOne(objList.id)} className="h-10 rounded-full bg-transparent px-2 text-sm font-semibold text-[#4a5866] hover:bg-transparent hover:text-[#1c2733]">
                       Remove
                     </Button>
