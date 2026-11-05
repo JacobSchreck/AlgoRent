@@ -140,7 +140,6 @@ export default function Home() {
           <div className="flex items-center gap-6 text-[14px] font-medium">
             <Link href="/search">Search</Link>
             <Link href="/saved">Saved</Link>
-            <Link href="/messages">Messages</Link>
             {objUser?.role == "ADMIN" && (
               <Link href="/moderation">Moderation</Link>
             )}

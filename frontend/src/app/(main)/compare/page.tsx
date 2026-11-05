@@ -6,6 +6,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Plus_Jakarta_Sans } from "next/font/google";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import AuthAccountLinks from "@/components/AuthAccountLinks";
 import { strApiUrl, ListingDetail, showDate, showMoney, showType, showYesNo } from "@/lib/listings";
 
 const objFont = Plus_Jakarta_Sans({ subsets: ["latin"], weight: ["500", "600", "700", "800"] });
@@ -243,11 +244,8 @@ function CompareTable() {
                     <Button type="button" onClick={() => objRouter.push(`/listings/${objList.id}`)} className="h-10 rounded-full border border-[#1c2733]/20 bg-transparent px-4 text-sm font-semibold text-[#1c2733] hover:bg-white/60">
                       View
                     </Button>
-                    {objList.sourceType == "LINK_ONLY" ? (
-                      <a href={objList.sourceUrl} target="_blank" rel="noopener noreferrer" className="flex h-10 items-center rounded-full bg-[#3f5b6e] px-4 text-sm font-semibold text-white hover:bg-[#34495a]">Open source</a>
-                    ) : (
-                      <Button type="button" onClick={() => objRouter.push("/messages")} className="h-10 rounded-full bg-[#3f5b6e] px-4 text-sm font-semibold text-white hover:bg-[#34495a]">Message</Button>
-                    )}
+                    {objList.sourceType == "LINK_ONLY" && <a href={objList.sourceUrl} target="_blank" rel="noopener noreferrer" className="flex h-10 items-center rounded-full bg-[#3f5b6e] px-4 text-sm font-semibold text-white hover:bg-[#34495a]">Open source</a>}
+                    <Button type="button" onClick={() => objRouter.push(`/saved?note=${objList.id}`)} className="h-10 rounded-full bg-[#3f5b6e] px-4 text-sm font-semibold text-white hover:bg-[#34495a]">Note host message</Button>
                     <Button type="button" onClick={() => removeOne(objList.id)} className="h-10 rounded-full bg-transparent px-2 text-sm font-semibold text-[#4a5866] hover:bg-transparent hover:text-[#1c2733]">
                       Remove
                     </Button>
@@ -273,8 +271,7 @@ export default function ComparePage() {
           <div className="flex items-center gap-6 text-[14px] font-medium">
             <Link href="/search">Search</Link>
             <Link href="/saved">Saved</Link>
-            <Link href="/messages">Messages</Link>
-            <Link href="/login">Sign in</Link>
+            <AuthAccountLinks />
           </div>
         </div>
       </nav>

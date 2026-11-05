@@ -7,6 +7,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Plus_Jakarta_Sans } from "next/font/google";
 import SearchBar from "@/components/SearchBar";
 import ListingCard from "@/components/ListingCard";
+import AuthAccountLinks from "@/components/AuthAccountLinks";
 import { Button } from "@/components/ui/button";
 import { strApiUrl, ListingSummary, showDates, showPlace } from "@/lib/listings";
 const ListingMap = dynamic(() => import("@/components/ListingMap"), { ssr: false });
@@ -266,8 +267,7 @@ export default function SearchPage() {
           <div className="flex items-center gap-6 text-[14px] font-medium">
             <Link href="/search" className="font-semibold">Search</Link>
             <Link href="/saved">Saved</Link>
-            <Link href="/messages">Messages</Link>
-            <Link href="/login">Sign in</Link>
+            <AuthAccountLinks />
           </div>
         </div>
       </nav>

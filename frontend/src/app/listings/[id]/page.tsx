@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
 import ReportListingDialog from "@/components/ReportListingDialog";
+import AuthAccountLinks from "@/components/AuthAccountLinks";
 import { strApiUrl, ListingDetail, showDates, showMoney, showPlace, showRooms, showType } from "@/lib/listings";
 import { getSaved, setSaved } from "@/lib/saved";
 
@@ -88,9 +89,13 @@ export default function ListingPage() {
       setSaved(arrHave.filter((objItem) => objItem.id != Number(strId)));
       setBlnSaved(false);
     } else {
-      setSaved([...arrHave, { id: Number(strId), status: "Interested" }]);
+      setSaved([...arrHave, { id: Number(strId), status: "Interested", notes: [] }]);
       setBlnSaved(true);
     }
+  }
+
+  function noteHostMessage() {
+    objRouter.push(`/saved?note=${strId}`);
   }
 
   let numRent = 0;
@@ -161,8 +166,7 @@ export default function ListingPage() {
           <div className="flex items-center gap-6 text-[14px] font-medium">
             <Link href="/search">Search</Link>
             <Link href="/saved">Saved</Link>
-            <Link href="/messages">Messages</Link>
-            <Link href="/login">Sign in</Link>
+            <AuthAccountLinks />
           </div>
         </div>
       </nav>
@@ -201,6 +205,9 @@ export default function ListingPage() {
 
             <Card className="fade-in delay-2 w-full gap-4 rounded-[22px] border border-white/80 bg-white/70 p-[22px] text-base text-[#1c2733] shadow-[0_10px_30px_rgba(63,91,110,0.15)] ring-0 backdrop-blur-xl lg:sticky lg:top-24 lg:w-[360px]">
               <p className="text-[22px] font-semibold">Details on {objList.sourceName || "source"}</p>
+              <Button type="button" onClick={noteHostMessage} className="h-12 rounded-full bg-[#3f5b6e] text-[15px] font-semibold text-white hover:bg-[#34495a]">
+                Note host message
+              </Button>
               <a href={objList.sourceUrl} target="_blank" rel="noopener noreferrer" className="flex h-12 items-center justify-center rounded-full bg-[#3f5b6e] px-6 text-[15px] font-semibold text-white hover:bg-[#34495a]">
                 View original listing ↗
               </a>
@@ -324,8 +331,8 @@ export default function ListingPage() {
                 </div>
               </div>
 
-              <Button type="button" onClick={() => objRouter.push("/messages")} className="h-12 rounded-full bg-[#3f5b6e] text-[15px] font-semibold text-white hover:bg-[#34495a]">
-                Message host
+              <Button type="button" onClick={noteHostMessage} className="h-12 rounded-full bg-[#3f5b6e] text-[15px] font-semibold text-white hover:bg-[#34495a]">
+                Note host message
               </Button>
 
               <a href={objList.sourceUrl} target="_blank" rel="noopener noreferrer" className="flex h-11 items-center justify-center rounded-full border border-[#1c2733]/20 text-sm font-semibold text-[#1c2733] hover:bg-white/50">

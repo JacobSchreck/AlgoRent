@@ -108,7 +108,9 @@ export default function LoginPage() {
         return;
       }
 
-      objRouter.push("/");
+      const strNext = new URLSearchParams(window.location.search).get("next");
+      const strDestination = strNext != null && strNext.startsWith("/") && !strNext.startsWith("//") ? strNext : "/";
+      objRouter.push(strDestination);
       objRouter.refresh();
 
     } catch (objErr) {
