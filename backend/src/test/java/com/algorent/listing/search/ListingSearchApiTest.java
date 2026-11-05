@@ -39,6 +39,20 @@ class ListingSearchApiTest {
     private MockMvc mvc;
 
     @Test
+    void linkOnlyResultsExposeOnlyTheirTitleAndSourceLink() throws Exception {
+        mvc.perform(get("/api/listings/search").param("city", "Linkville"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.results[0].id").value(8))
+                .andExpect(jsonPath("$.results[0].title").value("External listing"))
+                .andExpect(jsonPath("$.results[0].sourceUrl").value("https://links.example.com/8"))
+                .andExpect(jsonPath("$.results[0].sourceType").value("LINK_ONLY"))
+                .andExpect(jsonPath("$.results[0].city").value(nullValue()))
+                .andExpect(jsonPath("$.results[0].monthlyRent").value(nullValue()))
+                .andExpect(jsonPath("$.results[0].latitude").value(nullValue()))
+                .andExpect(jsonPath("$.results[0].thumbnailUrl").value(nullValue()));
+    }
+
+    @Test
     void cityOnlyReturnsActiveListingsCheapestFirstWithUnpricedLast() throws Exception {
         mvc.perform(get("/api/listings/search").param("city", "GAINESVILLE"))
                 .andExpect(status().isOk())

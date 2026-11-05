@@ -61,6 +61,7 @@ export default function ListingPage() {
   useEffect(() => {
     async function loadListing() {
       setBlnLoading(true);
+      setBlnSaved(getSaved().some((objItem) => objItem.id == Number(strId)));
       try {
         const objRes = await fetch(`${strApiUrl}/api/listings/${strId}`);
         if (objRes.ok == true) {
@@ -78,14 +79,6 @@ export default function ListingPage() {
       }
     }
     loadListing();
-  }, [strId]);
-
-  // check if this place was saved before
-  useEffect(() => {
-    const arrHave = getSaved();
-    if (arrHave.find((objItem) => objItem.id == Number(strId)) != undefined) {
-      setBlnSaved(true);
-    }
   }, [strId]);
 
   function toggleSave() {
@@ -184,7 +177,22 @@ export default function ListingPage() {
         </div>
       )}
 
-      {objList != null && (
+      {objList != null && objList.sourceType == "LINK_ONLY" && (
+        <div className="mx-auto flex max-w-[720px] flex-col gap-5 px-8 pt-16">
+          <Button type="button" onClick={() => objRouter.back()} className="h-auto w-fit bg-transparent p-0 text-sm font-semibold text-[#3f5b6e] hover:bg-transparent">
+            ← Back to results
+          </Button>
+          <Card className="gap-5 rounded-[22px] border border-white/70 bg-white/60 p-7 text-base text-[#1c2733] shadow-none ring-0 backdrop-blur-xl">
+            <p className="text-sm font-semibold text-[#4a5866]">Listed on {objList.sourceName || "an external source"}</p>
+            <h1 className="text-[36px] font-semibold leading-tight text-[#24313d]">{objList.title}</h1>
+            <a href={objList.sourceUrl} target="_blank" rel="noopener noreferrer" className="flex h-12 items-center justify-center rounded-full bg-[#3f5b6e] px-6 text-[15px] font-semibold text-white hover:bg-[#34495a]">
+              View on {objList.sourceName || "source"} ↗
+            </a>
+          </Card>
+        </div>
+      )}
+
+      {objList != null && objList.sourceType != "LINK_ONLY" && (
         <div className="mx-auto flex max-w-[1232px] flex-col gap-[18px] px-8 pt-5">
           <Button type="button" onClick={() => objRouter.back()} className="fade-in h-auto w-fit bg-transparent p-0 text-sm font-semibold text-[#3f5b6e] hover:bg-transparent">
             ← Back to results

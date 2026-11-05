@@ -47,6 +47,7 @@ public final class ListingSearchSql {
                 l.available_until,
                 l.source_url,
                 s.name AS source_name,
+                COALESCE(s.source_type, 'PROPERTY_SITE') AS source_type,
                 (
                     SELECT i.image_url
                     FROM listing_images i

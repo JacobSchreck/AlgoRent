@@ -22,7 +22,8 @@ public class ListingDetailRepository {
                 l.furnished, l.utilities_included, l.parking_available, l.laundry_available, l.pets_allowed,
                 l.contact_name, l.contact_email, l.contact_phone,
                 l.status, l.source_url, l.last_seen_at,
-                s.name AS source_name
+                s.name AS source_name,
+                COALESCE(s.source_type, 'PROPERTY_SITE') AS source_type
             FROM listings l
             JOIN sources s ON s.id = l.source_id
             WHERE l.id = :id
@@ -52,37 +53,40 @@ public class ListingDetailRepository {
     }
 
     private static ListingDetail mapRow(ResultSet rs, List<String> imageUrls) throws SQLException {
+        String sourceType = rs.getString("source_type");
+        boolean linkOnly = "LINK_ONLY".equalsIgnoreCase(sourceType);
         return new ListingDetail(
                 rs.getLong("id"),
                 rs.getString("title"),
-                rs.getString("description"),
-                rs.getString("property_type"),
-                rs.getString("listing_type"),
-                rs.getBigDecimal("monthly_rent"),
-                rs.getBigDecimal("security_deposit"),
-                rs.getBigDecimal("bedrooms"),
-                rs.getBigDecimal("bathrooms"),
-                rs.getObject("square_feet", Integer.class),
-                rs.getString("address"),
-                rs.getString("city"),
-                rs.getString("state"),
-                rs.getString("zip_code"),
-                rs.getObject("latitude", Double.class),
-                rs.getObject("longitude", Double.class),
-                rs.getObject("available_from", LocalDate.class),
-                rs.getObject("available_until", LocalDate.class),
-                rs.getObject("furnished", Boolean.class),
-                rs.getObject("utilities_included", Boolean.class),
-                rs.getObject("parking_available", Boolean.class),
-                rs.getObject("laundry_available", Boolean.class),
-                rs.getObject("pets_allowed", Boolean.class),
-                rs.getString("contact_name"),
-                rs.getString("contact_email"),
-                rs.getString("contact_phone"),
-                rs.getString("status"),
+                linkOnly ? null : rs.getString("description"),
+                linkOnly ? null : rs.getString("property_type"),
+                linkOnly ? null : rs.getString("listing_type"),
+                linkOnly ? null : rs.getBigDecimal("monthly_rent"),
+                linkOnly ? null : rs.getBigDecimal("security_deposit"),
+                linkOnly ? null : rs.getBigDecimal("bedrooms"),
+                linkOnly ? null : rs.getBigDecimal("bathrooms"),
+                linkOnly ? null : rs.getObject("square_feet", Integer.class),
+                linkOnly ? null : rs.getString("address"),
+                linkOnly ? null : rs.getString("city"),
+                linkOnly ? null : rs.getString("state"),
+                linkOnly ? null : rs.getString("zip_code"),
+                linkOnly ? null : rs.getObject("latitude", Double.class),
+                linkOnly ? null : rs.getObject("longitude", Double.class),
+                linkOnly ? null : rs.getObject("available_from", LocalDate.class),
+                linkOnly ? null : rs.getObject("available_until", LocalDate.class),
+                linkOnly ? null : rs.getObject("furnished", Boolean.class),
+                linkOnly ? null : rs.getObject("utilities_included", Boolean.class),
+                linkOnly ? null : rs.getObject("parking_available", Boolean.class),
+                linkOnly ? null : rs.getObject("laundry_available", Boolean.class),
+                linkOnly ? null : rs.getObject("pets_allowed", Boolean.class),
+                linkOnly ? null : rs.getString("contact_name"),
+                linkOnly ? null : rs.getString("contact_email"),
+                linkOnly ? null : rs.getString("contact_phone"),
+                linkOnly ? null : rs.getString("status"),
                 rs.getString("source_name"),
                 rs.getString("source_url"),
-                rs.getObject("last_seen_at", LocalDateTime.class),
-                List.copyOf(imageUrls));
+                sourceType,
+                linkOnly ? null : rs.getObject("last_seen_at", LocalDateTime.class),
+                linkOnly ? List.of() : List.copyOf(imageUrls));
     }
 }

@@ -32,6 +32,9 @@ type Listing = {
   availableFrom: string | null;
   availableUntil: string | null;
   thumbnailUrl: string | null;
+  sourceUrl: string;
+  sourceName: string | null;
+  sourceType: string;
 };
 
 type SearchResponse = {
@@ -240,6 +243,9 @@ export default function Home() {
               distance={[objList.city, objList.state]
                 .filter(Boolean)
                 .join(", ")}
+              sourceUrl={objList.sourceUrl}
+              sourceName={objList.sourceName}
+              sourceType={objList.sourceType}
             />
           ))}
         </div>

@@ -124,12 +124,12 @@ function SearchResults() {
   // only listings that have a location can go on the map
   const arrPins: { id: number; price: number; lat: number; lng: number }[] = [];
   for (const objList of arrResults) {
-    if (objList.latitude != null && objList.longitude != null) {
+    if (objList.sourceType != "LINK_ONLY" && objList.latitude != null && objList.longitude != null) {
       arrPins.push({ id: objList.id, price: Number(objList.monthlyRent ?? 0), lat: objList.latitude, lng: objList.longitude });
     }
   }
 
-  let strTitle = `Places in ${strCity}`;
+  const strTitle = `Places in ${strCity}`;
 
   let strDates = "";
   if (strMoveIn != "" && strMoveOut != "") {
@@ -211,11 +211,16 @@ function SearchResults() {
                 dates={showDates(objList.availableFrom, objList.availableUntil)}
                 distance={objList.distanceMiles != null ? `${objList.distanceMiles.toFixed(1)} mi away` : showPlace(objList.city, objList.state)}
                 thumbnailUrl={objList.thumbnailUrl}
+                sourceUrl={objList.sourceUrl}
+                sourceName={objList.sourceName}
+                sourceType={objList.sourceType}
               />
-              <label className="flex items-center gap-2 text-[13px] font-semibold">
-                <input type="checkbox" checked={arrCompare.includes(objList.id)} onChange={() => toggleCompare(objList.id)} className="h-4 w-4 accent-[#3f5b6e]" />
-                Compare
-              </label>
+              {objList.sourceType != "LINK_ONLY" && (
+                <label className="flex items-center gap-2 text-[13px] font-semibold">
+                  <input type="checkbox" checked={arrCompare.includes(objList.id)} onChange={() => toggleCompare(objList.id)} className="h-4 w-4 accent-[#3f5b6e]" />
+                  Compare
+                </label>
+              )}
             </div>
           ))}
         </div>

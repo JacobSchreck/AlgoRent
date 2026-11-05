@@ -52,7 +52,10 @@ function CompareTable() {
         try {
           const objRes = await fetch(`${strApiUrl}/api/listings/${strId}`);
           if (objRes.ok == true) {
-            arrFound.push(await objRes.json());
+            const objListing: ListingDetail = await objRes.json();
+            if (objListing.sourceType != "LINK_ONLY") {
+              arrFound.push(objListing);
+            }
           }
         } catch (objErr) {
           console.log("couldnt reach backend", objErr);

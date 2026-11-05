@@ -1,7 +1,9 @@
 -- Test data for ListingSearchApiTest. Reset before every test so ids are predictable.
 TRUNCATE messages, inquiries, favorites, listing_images, listings, sources, users RESTART IDENTITY CASCADE;
 
-INSERT INTO sources (name, base_url) VALUES ('Test Source', 'https://example.com');
+INSERT INTO sources (name, base_url, source_type) VALUES
+    ('Test Source', 'https://example.com', 'PROPERTY_SITE'),
+    ('Link Source', 'https://links.example.com', 'LINK_ONLY');
 
 -- id | city        | rent | available               | notes
 --  1 | Gainesville |  750 | 2027-05-01 - 2027-08-31 | furnished studio, utilities included, 2 photos
@@ -29,7 +31,9 @@ VALUES
     (1, 'ext-6', 'https://example.com/6', 'Gainesville June only', 'Gainesville', 'FL', 900.00, 1, 1,
      'apartment', 'sublet', '2027-06-01', '2027-06-30', TRUE, FALSE, 'ACTIVE', '2026-09-06 10:00'),
     (1, 'ext-7', 'https://example.com/7', 'Austin 1BR', 'Austin', 'TX', 1400.00, 1, 1,
-     'apartment', 'sublet', '2027-05-01', '2027-08-31', TRUE, TRUE, 'ACTIVE', '2026-09-07 10:00');
+     'apartment', 'sublet', '2027-05-01', '2027-08-31', TRUE, TRUE, 'ACTIVE', '2026-09-07 10:00'),
+    (2, 'ext-8', 'https://links.example.com/8', 'External listing', 'Linkville', 'FL', 800.00, 1, 1,
+     'apartment', 'private_room', '2027-05-01', '2027-08-31', TRUE, TRUE, 'ACTIVE', '2026-09-08 10:00');
 
 INSERT INTO listing_images (listing_id, image_url, display_order) VALUES
     (1, 'https://img.example.com/1-second.jpg', 2),
