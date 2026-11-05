@@ -1,5 +1,5 @@
 package com.algorent.listing.search;
-
+import java.util.List;
 import com.algorent.common.PageResponse;
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -54,4 +54,29 @@ public class ListingSearchController {
 
         return repository.search(criteria);
     }
-}
+    
+    @GetMapping("/merge")
+        public List<ListingSummary> merge(
+            @RequestParam String city,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate moveIn,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate moveOut) {
+
+        ListingSearchCriteria criteria = ListingSearchCriteria.of(
+                city,
+                null,
+                moveIn,
+                moveOut,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                0,
+                ListingSearchCriteria.MAX_PAGE_SIZE);
+
+        return repository.merge(criteria);
+        }
+ }
