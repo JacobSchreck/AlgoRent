@@ -54,6 +54,7 @@ function SearchResults() {
   const [arrResults, setArrResults] = useState<ListingSummary[]>([]);
   const [blnLoading, setBlnLoading] = useState(true);
   const [strErr, setStrErr] = useState("");
+  const [objZipSpots, setObjZipSpots] = useState<{ [strZip: string]: [number, number] }>({});
 
   // ask the backend for listings every time the search or a filter changes
   useEffect(() => {
@@ -101,6 +102,32 @@ function SearchResults() {
     loadResults();
   }, [strCity, strMoveIn, strMoveOut, strMaxRent, strBeds, strRoomType, strProperty, strSort]);
 
+  // the listings dont have a spot yet, so look up where each zip code is
+  useEffect(() => {
+    async function findZips() {
+      const objFound: { [strZip: string]: [number, number] } = {};
+      for (const objList of arrResults) {
+        const strZip = objList.zipCode;
+        if (objList.sourceType == "LINK_ONLY" || strZip == null || objList.latitude != null) {
+          continue;
+        } else if (objFound[strZip] != undefined) {
+          continue;
+        }
+        try {
+          const objRes = await fetch(`https://api.zippopotam.us/us/${strZip}`);
+          if (objRes.ok == true) {
+            const objData = await objRes.json();
+            objFound[strZip] = [Number(objData.places[0].latitude), Number(objData.places[0].longitude)];
+          }
+        } catch (objErr) {
+          console.log("couldnt find that zip code", objErr);
+        }
+      }
+      setObjZipSpots(objFound);
+    }
+    findZips();
+  }, [arrResults]);
+
   function toggleCompare(numId: number) {
     if (arrCompare.includes(numId) == true) {
       setArrCompare(arrCompare.filter((numItem) => numItem != numId));
@@ -122,11 +149,20 @@ function SearchResults() {
     blnAnyFilter = true;
   }
 
-  // only listings that have a location can go on the map
+  // use the exact spot if there is one, if not use the zip code area
   const arrPins: { id: number; price: number; lat: number; lng: number }[] = [];
+  let blnApprox = false;
   for (const objList of arrResults) {
     if (objList.sourceType != "LINK_ONLY" && objList.latitude != null && objList.longitude != null) {
       arrPins.push({ id: objList.id, price: Number(objList.monthlyRent ?? 0), lat: objList.latitude, lng: objList.longitude });
+    } else if (objList.sourceType != "LINK_ONLY" && objList.zipCode != null && objZipSpots[objList.zipCode] != undefined) {
+      // move pins in the same zip a little so they dont sit on top of each other
+      const arrSpot = objZipSpots[objList.zipCode];
+      const numIdx = arrPins.length;
+      const numLatShift = ((numIdx % 3) - 1) * 0.004;
+      const numLngShift = ((Math.floor(numIdx / 3) % 3) - 1) * 0.004;
+      arrPins.push({ id: objList.id, price: Number(objList.monthlyRent ?? 0), lat: arrSpot[0] + numLatShift, lng: arrSpot[1] + numLngShift });
+      blnApprox = true;
     }
   }
 
@@ -234,6 +270,11 @@ function SearchResults() {
           {arrResults.length > 0 && arrPins.length == 0 && (
             <p className="absolute left-14 top-4 z-[1000] rounded-full bg-white/90 px-3.5 py-1.5 text-[13px] font-medium text-[#4a5866]">
               Map spots aren&apos;t in the listing data yet
+            </p>
+          )}
+
+          {blnApprox == true && (
+            <p className="absolute left-14 top-4 z-[1000] rounded-full bg-white/90 px-3.5 py-1.5 text-[13px] font-medium text-[#4a5866]">
             </p>
           )}
 

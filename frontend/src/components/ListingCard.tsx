@@ -16,10 +16,18 @@ export default function ListingCard({ id, title, price, dates, distance, thumbna
   if (sourceType == "LINK_ONLY") {
     return (
       <Link href={`/listings/${id}`} className="reveal">
-        <Card className="gap-3 rounded-[18px] border border-white/60 bg-white/50 p-5 text-base text-[#1c2733] shadow-none ring-0 backdrop-blur-md">
-          <p className="line-clamp-3 text-[15px] font-bold">{title}</p>
-          <p className="text-sm text-[#4a5866]">Listed on {sourceName || "an external source"}</p>
-          <p className="text-sm font-semibold text-[#3f5b6e]">View listing →</p>
+        <Card className="gap-2.5 overflow-visible rounded-none bg-transparent py-0 text-base text-[#1c2733] shadow-none ring-0">
+          <div className="relative flex h-44 flex-col items-center justify-center gap-2 overflow-hidden rounded-[18px] border border-white/60 bg-gradient-to-br from-[#dfe7f0] to-[#c9d6e4] text-[#3f5b6e]">
+            <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <path d="M3 11l9-7 9 7" />
+              <path d="M5 10v10h14V10" />
+              <path d="M10 20v-5h4v5" />
+            </svg>
+            <span className="text-xs font-semibold">Photo on {sourceName || "the original site"}</span>
+          </div>
+          <p className="line-clamp-2 text-[15px] font-bold">{title}</p>
+          <p className="-mt-1.5 text-sm text-[#4a5866]">Listed on {sourceName || "an external source"}</p>
+          <p className="-mt-1 text-sm font-semibold text-[#3f5b6e]">View listing →</p>
         </Card>
       </Link>
     );

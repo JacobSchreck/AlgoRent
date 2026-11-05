@@ -55,7 +55,7 @@ export default function AuthAccountLinks() {
   return (
     <>
       {objUser.role == "ADMIN" && <Link href="/moderation">Moderation</Link>}
-      <span>{objUser.firstName || objUser.email}</span>
+      <Link href="/profile">{objUser.firstName || objUser.email}</Link>
       <Button type="button" onClick={signOut} className="h-auto cursor-pointer bg-transparent p-0 text-[14px] font-medium text-[#1c2733] hover:bg-transparent hover:underline">
         Sign out
       </Button>

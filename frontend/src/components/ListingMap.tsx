@@ -19,7 +19,13 @@ type Props = {
   strCity?: string;
 };
 
-// center of UF campus
+type MySpot = {
+  address: string;
+  lat: number;
+  lng: number;
+};
+
+// center of UF campus, used until we know where to look
 const arrUf: [number, number] = [29.6436, -82.3549];
 
 // cities we already know so the map can jump there right away
@@ -48,6 +54,15 @@ function makePin(strText: string, blnDark: boolean) {
   });
 }
 
+// the dark pin for the spot they saved on their profile
+function makeSpotPin() {
+  return L.divIcon({
+    className: "",
+    iconSize: [0, 0],
+    html: `<div style="background:#1c2733;color:#ffffff;display:inline-block;transform:translate(-50%,-50%);padding:5px 12px;border-radius:999px;font:700 13px 'Plus Jakarta Sans',sans-serif;white-space:nowrap;box-shadow:0 4px 12px rgba(28,39,51,0.25)">&#9679; Your spot</div>`,
+  });
+}
+
 // moves the map when the center changes
 function MoveMap({ numLat, numLng }: { numLat: number; numLng: number }) {
   const objMap = useMap();
@@ -60,8 +75,21 @@ function MoveMap({ numLat, numLng }: { numLat: number; numLng: number }) {
 export default function ListingMap({ arrPins, arrPicked, strCity }: Props) {
   const objRouter = useRouter();
   const [arrFetchedCenter, setArrFetchedCenter] = useState<[number, number]>(arrUf);
+  const [objSpot, setObjSpot] = useState<MySpot | null>(null);
   const strCityKey = strCity?.trim().toLowerCase() ?? "";
   const arrKnownCenter = objCities[strCityKey];
+
+  // get the spot they saved on their profile page
+  useEffect(() => {
+    try {
+      const strSaved = localStorage.getItem("algorentMySpot");
+      if (strSaved != null) {
+        setObjSpot(JSON.parse(strSaved));
+      }
+    } catch (objErr) {
+      console.log("couldnt load your spot", objErr);
+    }
+  }, []);
 
   // find where the searched city is
   useEffect(() => {
@@ -93,11 +121,6 @@ export default function ListingMap({ arrPins, arrPicked, strCity }: Props) {
     arrCenter = [arrPins[0].lat, arrPins[0].lng];
   }
 
-  let blnShowUf = false;
-  if (strCity == undefined || strCity.trim().toLowerCase() == "gainesville") {
-    blnShowUf = true;
-  }
-
   return (
     <>
       {/* makes the map softer so it matches the blue design */}
@@ -112,7 +135,7 @@ export default function ListingMap({ arrPins, arrPicked, strCity }: Props) {
 
         <MoveMap numLat={arrCenter[0]} numLng={arrCenter[1]} />
 
-        {blnShowUf == true && <Marker position={arrUf} icon={makePin("UF", true)} />}
+        {objSpot != null && <Marker position={[objSpot.lat, objSpot.lng]} icon={makeSpotPin()} zIndexOffset={1000} />}
 
         {arrPins.map((objPin) => (
           <Marker
