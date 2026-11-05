@@ -34,27 +34,30 @@ public class ListingSearchRepository {
     }
 
     private static ListingSummary mapRow(ResultSet rs, int rowNum) throws SQLException {
+        String sourceType = rs.getString("source_type");
+        boolean linkOnly = "LINK_ONLY".equalsIgnoreCase(sourceType);
         return new ListingSummary(
                 rs.getLong("id"),
                 rs.getString("title"),
-                rs.getString("address"),
-                rs.getString("city"),
-                rs.getString("state"),
-                rs.getString("zip_code"),
-                rs.getObject("latitude", Double.class),
-                rs.getObject("longitude", Double.class),
-                rs.getBigDecimal("monthly_rent"),
-                rs.getBigDecimal("bedrooms"),
-                rs.getBigDecimal("bathrooms"),
-                rs.getString("property_type"),
-                rs.getString("listing_type"),
-                rs.getObject("furnished", Boolean.class),
-                rs.getObject("utilities_included", Boolean.class),
-                rs.getObject("available_from", LocalDate.class),
-                rs.getObject("available_until", LocalDate.class),
+                linkOnly ? null : rs.getString("address"),
+                linkOnly ? null : rs.getString("city"),
+                linkOnly ? null : rs.getString("state"),
+                linkOnly ? null : rs.getString("zip_code"),
+                linkOnly ? null : rs.getObject("latitude", Double.class),
+                linkOnly ? null : rs.getObject("longitude", Double.class),
+                linkOnly ? null : rs.getBigDecimal("monthly_rent"),
+                linkOnly ? null : rs.getBigDecimal("bedrooms"),
+                linkOnly ? null : rs.getBigDecimal("bathrooms"),
+                linkOnly ? null : rs.getString("property_type"),
+                linkOnly ? null : rs.getString("listing_type"),
+                linkOnly ? null : rs.getObject("furnished", Boolean.class),
+                linkOnly ? null : rs.getObject("utilities_included", Boolean.class),
+                linkOnly ? null : rs.getObject("available_from", LocalDate.class),
+                linkOnly ? null : rs.getObject("available_until", LocalDate.class),
                 rs.getString("source_url"),
                 rs.getString("source_name"),
-                rs.getString("thumbnail_url"),
-                rs.getBigDecimal("distance_miles"));
+                sourceType,
+                linkOnly ? null : rs.getString("thumbnail_url"),
+                linkOnly ? null : rs.getBigDecimal("distance_miles"));
     }
 }

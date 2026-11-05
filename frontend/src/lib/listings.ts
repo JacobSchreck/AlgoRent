@@ -4,7 +4,7 @@ export type ListingSummary = {
   id: number;
   title: string;
   address: string | null;
-  city: string;
+  city: string | null;
   state: string | null;
   zipCode: string | null;
   latitude: number | null;
@@ -20,6 +20,7 @@ export type ListingSummary = {
   availableUntil: string | null;
   sourceUrl: string;
   sourceName: string | null;
+  sourceType: string;
   thumbnailUrl: string | null;
   distanceMiles: number | null;
 };
@@ -107,7 +108,10 @@ export function showRooms(numBeds: number | null, numBaths: number | null) {
   return strRooms;
 }
 
-export function showPlace(strCity: string, strState: string | null) {
+export function showPlace(strCity: string | null, strState: string | null) {
+  if (strCity == null) {
+    return strState ?? "Location available on source";
+  }
   if (strState == null) {
     return strCity;
   }

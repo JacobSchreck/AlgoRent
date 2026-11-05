@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
+import ReportListingDialog from "@/components/ReportListingDialog";
 import { strApiUrl, ListingDetail, showDates, showMoney, showPlace, showRooms, showType } from "@/lib/listings";
 import { getSaved, setSaved } from "@/lib/saved";
 
@@ -61,6 +62,7 @@ export default function ListingPage() {
   useEffect(() => {
     async function loadListing() {
       setBlnLoading(true);
+      setBlnSaved(getSaved().some((objItem) => objItem.id == Number(strId)));
       try {
         const objRes = await fetch(`${strApiUrl}/api/listings/${strId}`);
         if (objRes.ok == true) {
@@ -78,14 +80,6 @@ export default function ListingPage() {
       }
     }
     loadListing();
-  }, [strId]);
-
-  // check if this place was saved before
-  useEffect(() => {
-    const arrHave = getSaved();
-    if (arrHave.find((objItem) => objItem.id == Number(strId)) != undefined) {
-      setBlnSaved(true);
-    }
   }, [strId]);
 
   function toggleSave() {
@@ -184,9 +178,44 @@ export default function ListingPage() {
         </div>
       )}
 
-      {objList != null && (
+      {objList != null && objList.sourceType == "LINK_ONLY" && (
         <div className="mx-auto flex max-w-[1232px] flex-col gap-[18px] px-8 pt-5">
-          <Button type="button" onClick={() => objRouter.back()} className="fade-in h-auto w-fit bg-transparent p-0 text-sm font-semibold text-[#3f5b6e] hover:bg-transparent">
+          <Button type="button" onClick={() => objRouter.back()} style={{ cursor: "pointer" }} className="fade-in h-auto w-fit cursor-pointer bg-transparent p-0 text-sm font-semibold text-[#3f5b6e] underline-offset-4 hover:bg-transparent hover:text-[#24313d] hover:underline">
+            ← Back to results
+          </Button>
+
+          <div className="flex flex-col gap-8 lg:flex-row lg:items-start">
+            <div className="fade-in delay-1 flex flex-1 flex-col gap-[22px]">
+              <div className="flex flex-col gap-2">
+                <h1 className="text-[40px] font-semibold leading-[1.08] tracking-[-1px] text-[#24313d]">{objList.title}</h1>
+                <p className="text-[15px] text-[#4a5866]">Listed on {objList.sourceName || "an external source"}</p>
+              </div>
+
+              <Card className="max-w-[640px] gap-2 rounded-2xl border border-white/60 bg-white/50 p-5 text-base text-[#1c2733] shadow-none ring-0">
+                <h2 className="text-xl font-semibold">Listing details</h2>
+                <p className="text-[15px] leading-relaxed text-[#4a5866]">This source provides its listing information on the original website.</p>
+              </Card>
+
+              <div className="w-fit"><ReportListingDialog listingId={objList.id} listingTitle={objList.title} /></div>
+            </div>
+
+            <Card className="fade-in delay-2 w-full gap-4 rounded-[22px] border border-white/80 bg-white/70 p-[22px] text-base text-[#1c2733] shadow-[0_10px_30px_rgba(63,91,110,0.15)] ring-0 backdrop-blur-xl lg:sticky lg:top-24 lg:w-[360px]">
+              <p className="text-[22px] font-semibold">Details on {objList.sourceName || "source"}</p>
+              <a href={objList.sourceUrl} target="_blank" rel="noopener noreferrer" className="flex h-12 items-center justify-center rounded-full bg-[#3f5b6e] px-6 text-[15px] font-semibold text-white hover:bg-[#34495a]">
+                View original listing ↗
+              </a>
+              <div className="flex gap-2.5">
+                <Button type="button" onClick={toggleSave} className={strOutlineBtn}>{blnSaved == true ? "Saved" : "Save"}</Button>
+                <Button type="button" onClick={() => setBlnCompare(!blnCompare)} className={strOutlineBtn}>{blnCompare == true ? "Added" : "Add to compare"}</Button>
+              </div>
+            </Card>
+          </div>
+        </div>
+      )}
+
+      {objList != null && objList.sourceType != "LINK_ONLY" && (
+        <div className="mx-auto flex max-w-[1232px] flex-col gap-[18px] px-8 pt-5">
+          <Button type="button" onClick={() => objRouter.back()} style={{ cursor: "pointer" }} className="fade-in h-auto w-fit cursor-pointer bg-transparent p-0 text-sm font-semibold text-[#3f5b6e] underline-offset-4 hover:bg-transparent hover:text-[#24313d] hover:underline">
             ← Back to results
           </Button>
 
@@ -265,6 +294,8 @@ export default function ListingPage() {
                   <p className="text-[13px] text-[#4a5866]">Listed on {objList.sourceName || "ReletMe"}</p>
                 </div>
               </Card>
+
+              <div className="w-fit"><ReportListingDialog listingId={objList.id} listingTitle={objList.title} /></div>
             </div>
 
             {/* price card */}

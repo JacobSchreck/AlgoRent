@@ -8,9 +8,23 @@ type ListingCardProps = {
   dates: string;
   distance: string;
   thumbnailUrl?: string | null;
+  sourceName: string | null;
+  sourceType: string;
 };
 
-export default function ListingCard({ id, title, price, dates, distance, thumbnailUrl }: ListingCardProps) {
+export default function ListingCard({ id, title, price, dates, distance, thumbnailUrl, sourceName, sourceType }: ListingCardProps) {
+  if (sourceType == "LINK_ONLY") {
+    return (
+      <Link href={`/listings/${id}`} className="reveal">
+        <Card className="gap-3 rounded-[18px] border border-white/60 bg-white/50 p-5 text-base text-[#1c2733] shadow-none ring-0 backdrop-blur-md">
+          <p className="line-clamp-3 text-[15px] font-bold">{title}</p>
+          <p className="text-sm text-[#4a5866]">Listed on {sourceName || "an external source"}</p>
+          <p className="text-sm font-semibold text-[#3f5b6e]">View listing →</p>
+        </Card>
+      </Link>
+    );
+  }
+
   let strPrice = "Price not listed";
   if (price != null && price > 0) {
     strPrice = `$${price.toLocaleString()}/mo`;

@@ -6,8 +6,8 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 /**
- * Everything the listing detail page shows. Any field except id, title, city, sourceUrl, status
- * and imageUrls may be null when the source site did not provide it.
+ * Everything the listing detail page shows. LINK_ONLY records intentionally populate only id,
+ * title, sourceName, sourceUrl and sourceType.
  *
  * <p>status is returned rather than hiding non-active listings, so a saved listing that was taken
  * down can still be shown as "no longer available".
@@ -42,6 +42,7 @@ public record ListingDetail(
         String status,
         String sourceName,
         String sourceUrl,
+        String sourceType,
         LocalDateTime lastSeenAt,
         List<String> imageUrls) {
 }

@@ -1,6 +1,7 @@
 package com.algorent.listing.detail;
 
 import static org.hamcrest.Matchers.contains;
+import static org.hamcrest.Matchers.nullValue;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -32,6 +33,20 @@ class ListingDetailApiTest {
 
     @Autowired
     private MockMvc mvc;
+
+    @Test
+    void linkOnlyDetailsExposeOnlyTheirTitleAndSourceLink() throws Exception {
+        mvc.perform(get("/api/listings/8"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(8))
+                .andExpect(jsonPath("$.title").value("External listing"))
+                .andExpect(jsonPath("$.sourceUrl").value("https://links.example.com/8"))
+                .andExpect(jsonPath("$.sourceType").value("LINK_ONLY"))
+                .andExpect(jsonPath("$.city").value(nullValue()))
+                .andExpect(jsonPath("$.monthlyRent").value(nullValue()))
+                .andExpect(jsonPath("$.status").value(nullValue()))
+                .andExpect(jsonPath("$.imageUrls").isEmpty());
+    }
 
     @Test
     void returnsListingWithAllPhotosInDisplayOrder() throws Exception {

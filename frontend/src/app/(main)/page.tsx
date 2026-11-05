@@ -21,6 +21,7 @@ type User = {
   email: string;
   firstName: string | null;
   lastName: string | null;
+  role: string;
 };
 
 type Listing = {
@@ -32,6 +33,9 @@ type Listing = {
   availableFrom: string | null;
   availableUntil: string | null;
   thumbnailUrl: string | null;
+  sourceUrl: string;
+  sourceName: string | null;
+  sourceType: string;
 };
 
 type SearchResponse = {
@@ -137,6 +141,9 @@ export default function Home() {
             <Link href="/search">Search</Link>
             <Link href="/saved">Saved</Link>
             <Link href="/messages">Messages</Link>
+            {objUser?.role == "ADMIN" && (
+              <Link href="/moderation">Moderation</Link>
+            )}
 
             {blnChecked &&
               (objUser ? (
@@ -240,6 +247,8 @@ export default function Home() {
               distance={[objList.city, objList.state]
                 .filter(Boolean)
                 .join(", ")}
+              sourceName={objList.sourceName}
+              sourceType={objList.sourceType}
             />
           ))}
         </div>

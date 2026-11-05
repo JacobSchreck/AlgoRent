@@ -59,36 +59,36 @@ function MoveMap({ numLat, numLng }: { numLat: number; numLng: number }) {
 
 export default function ListingMap({ arrPins, arrPicked, strCity }: Props) {
   const objRouter = useRouter();
-  const [arrCityCenter, setArrCityCenter] = useState<[number, number]>(arrUf);
+  const [arrFetchedCenter, setArrFetchedCenter] = useState<[number, number]>(arrUf);
+  const strCityKey = strCity?.trim().toLowerCase() ?? "";
+  const arrKnownCenter = objCities[strCityKey];
 
   // find where the searched city is
   useEffect(() => {
     if (strCity == undefined || strCity.trim() == "") {
       return;
     }
-    const strKey = strCity.trim().toLowerCase();
-    if (objCities[strKey] != undefined) {
-      setArrCityCenter(objCities[strKey]);
+    if (arrKnownCenter != undefined) {
       return;
     }
 
     // not one we know, so look it up
     async function findCity() {
       try {
-        const objRes = await fetch(`https://nominatim.openstreetmap.org/search?format=json&limit=1&q=${encodeURIComponent(strKey)}`);
+        const objRes = await fetch(`https://nominatim.openstreetmap.org/search?format=json&limit=1&q=${encodeURIComponent(strCityKey)}`);
         const arrData = await objRes.json();
         if (arrData.length > 0) {
-          setArrCityCenter([Number(arrData[0].lat), Number(arrData[0].lon)]);
+          setArrFetchedCenter([Number(arrData[0].lat), Number(arrData[0].lon)]);
         }
       } catch (objErr) {
         console.log("couldnt find that city on the map", objErr);
       }
     }
     findCity();
-  }, [strCity]);
+  }, [arrKnownCenter, strCity, strCityKey]);
 
   // if listings have spots, center on the first one, otherwise the city
-  let arrCenter = arrCityCenter;
+  let arrCenter = arrKnownCenter ?? arrFetchedCenter;
   if (arrPins.length > 0) {
     arrCenter = [arrPins[0].lat, arrPins[0].lng];
   }

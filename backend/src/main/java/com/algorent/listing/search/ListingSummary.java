@@ -4,8 +4,8 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 
 /**
- * One search result: what a results card or map pin needs. Any field except id, title, city
- * and sourceUrl may be null when the source site did not provide it.
+ * One search result: what a results card or map pin needs. Any field except id, title,
+ * sourceUrl and sourceType may be null when the source site did not provide it.
  *
  * <p>distanceMiles is set only when the search includes lat and lng, and is null for a listing
  * without coordinates.
@@ -30,6 +30,7 @@ public record ListingSummary(
         LocalDate availableUntil,
         String sourceUrl,
         String sourceName,
+        String sourceType,
         String thumbnailUrl,
         BigDecimal distanceMiles) {
 }
