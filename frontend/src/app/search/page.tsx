@@ -514,6 +514,10 @@ export default function SearchPage() {
               Search
             </Link>
 
+            <Link href="/compare">
+              Compare
+            </Link>
+
             <Link href="/saved">
               Saved
             </Link>
