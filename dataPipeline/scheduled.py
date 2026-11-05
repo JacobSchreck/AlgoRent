@@ -10,11 +10,17 @@ import argparse
 import asyncio
 import traceback
 
-from dataPipeline.pipeline import run_reletme_pipeline
+from dataPipeline.pipeline import (
+    run_reletme_pipeline,
+    run_rotatingroom_pipeline,
+    run_subleaps_pipeline,
+)
 
 # Add new sites here once they have a pipeline function like ReletMe's.
 SOURCES = {
     "ReletMe": run_reletme_pipeline,
+    "SubLeaps": run_subleaps_pipeline,
+    "RotatingRoom": run_rotatingroom_pipeline,
 }
 
 
