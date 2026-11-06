@@ -81,14 +81,20 @@ export default function ListingMap({ arrPins, arrPicked, strCity }: Props) {
 
   // get the spot they saved on their profile page
   useEffect(() => {
-    try {
-      const strSaved = localStorage.getItem("algorentMySpot");
-      if (strSaved != null) {
-        setObjSpot(JSON.parse(strSaved));
+    const idTimer = window.setTimeout(() => {
+      try {
+        const strSaved = localStorage.getItem("algorentMySpot");
+        if (strSaved != null) {
+          setObjSpot(JSON.parse(strSaved));
+        }
+      } catch (objErr) {
+        console.log("couldnt load your spot", objErr);
       }
-    } catch (objErr) {
-      console.log("couldnt load your spot", objErr);
-    }
+    }, 0);
+
+    return () => {
+      window.clearTimeout(idTimer);
+    };
   }, []);
 
   // find where the searched city is

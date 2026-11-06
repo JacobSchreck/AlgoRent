@@ -73,16 +73,22 @@ export default function ProfilePage() {
     }
     loadProfile();
 
-    try {
-      const strSaved = localStorage.getItem(strSpotKey);
-      if (strSaved != null) {
-        const objSaved: MySpot = JSON.parse(strSaved);
-        setObjSpot(objSaved);
-        setStrAddress(objSaved.address);
+    const idTimer = window.setTimeout(() => {
+      try {
+        const strSaved = localStorage.getItem(strSpotKey);
+        if (strSaved != null) {
+          const objSaved: MySpot = JSON.parse(strSaved);
+          setObjSpot(objSaved);
+          setStrAddress(objSaved.address);
+        }
+      } catch (objErr) {
+        console.log("couldnt load your spot", objErr);
       }
-    } catch (objErr) {
-      console.log("couldnt load your spot", objErr);
-    }
+    }, 0);
+
+    return () => {
+      window.clearTimeout(idTimer);
+    };
   }, []);
 
   // look up the address they typed and save where it is
