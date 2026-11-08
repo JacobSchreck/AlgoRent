@@ -1,6 +1,55 @@
 # AlgoRent
 The team is trying to achieve an app for subleasing, specifically for students looking for short term housing for internships.
 
+## Reviewer quick start (Windows)
+
+Install these prerequisites before cloning the repository:
+
+- [Docker Desktop](https://www.docker.com/products/docker-desktop/) with WSL 2 enabled
+- JDK 21
+- Node.js 20 or newer
+
+After cloning, open the repository folder and run `setup-local.bat` once. It validates the tools,
+starts PostgreSQL, installs the exact frontend dependencies from `package-lock.json`, and downloads
+and compiles the backend dependencies.
+
+Run `start-local.bat` whenever you want to review the app. It starts the database and opens the
+backend and frontend in separate terminal windows, loads 5,000 local U.S. demo listings, and then
+opens <http://localhost:3000>. Keep both terminal windows open while using the site. The first
+backend start may take a little longer while Flyway creates the database tables.
+
+The demo dataset contains 3,750 full-detail listings and 1,250 link-only listings across 25 U.S.
+cities. It also creates pending moderation reports and this local administrator:
+
+```text
+Email: admin123@gmail.com
+Password: admin123
+```
+
+The records are generated locally from [database/demo-data.sql](database/demo-data.sql). They use
+reserved demo identifiers and `example.com` contact/source addresses; no Supabase records, real
+users, or production credentials are copied. Starting the app again fills in missing demo records
+without duplicating them or erasing review actions.
+
+The website setup does not install or run `dataPipeline/`. That tool is only needed to import fresh
+third-party listings and requires separate source credentials. See
+[dataPipeline/README.md](dataPipeline/README.md) if pipeline review is part of the handoff.
+
+To stop the website, close the backend and frontend terminal windows. To stop the database too,
+run `docker compose down` from the repository root. Database data is retained between runs.
+
+To reset all local review activity and regenerate a clean database, run:
+
+```powershell
+docker compose down -v
+.\start-local.bat
+```
+
+The `-v` reset permanently deletes only the local Docker database volume.
+
+See [REVIEW_GUIDE.md](REVIEW_GUIDE.md) for the acceptance checklist and automated validation
+commands to give the reviewing team.
+
 ## Repository layout
 
 | Folder | What it is |
