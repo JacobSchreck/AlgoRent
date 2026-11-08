@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800" role="img" aria-label="Demo apartment lounge with city window">
+  <defs><linearGradient id="sky" x2="0" y2="1"><stop stop-color="#77b7d1"/><stop offset="1" stop-color="#d8edf2"/></linearGradient></defs>
+  <rect width="1200" height="570" fill="#dedbd5"/><rect y="570" width="1200" height="230" fill="#9c7758"/>
+  <rect x="70" y="55" width="620" height="400" fill="#fff"/><rect x="92" y="77" width="576" height="356" fill="url(#sky)"/><path d="M92 340l80-90 70 55 90-145 110 135 70-80 156 125v93H92z" fill="#78939c"/><path d="M380 77v356M92 250h576" stroke="#fff" stroke-width="15"/>
+  <path d="M170 500h690q55 0 55 55v145H115V555q0-55 55-55z" fill="#596f78"/><rect x="155" y="535" width="210" height="95" rx="20" fill="#d6c4a5"/><rect x="390" y="535" width="210" height="95" rx="20" fill="#e6e0d6"/><rect x="625" y="535" width="210" height="95" rx="20" fill="#be8a70"/>
+  <ellipse cx="985" cy="680" rx="150" ry="38" fill="#d5b680"/><rect x="900" y="580" width="170" height="28" rx="10" fill="#55453b"/><path d="M925 608l-20 95m140-95 20 95" stroke="#55453b" stroke-width="16"/>
+  <rect x="1030" y="215" width="14" height="340" fill="#465963"/><path d="M945 230q90-135 180 0z" fill="#cc9952"/><circle cx="1035" cy="235" r="27" fill="#ffe6a0"/>
+</svg>

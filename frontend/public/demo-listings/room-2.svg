@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800" role="img" aria-label="Modern demo apartment bedroom">
+  <defs><linearGradient id="w" x2="0" y2="1"><stop stop-color="#f4eee5"/><stop offset="1" stop-color="#ddd1c0"/></linearGradient></defs>
+  <rect width="1200" height="585" fill="url(#w)"/><rect y="585" width="1200" height="215" fill="#967255"/>
+  <rect x="720" y="65" width="390" height="350" rx="8" fill="#fdfdfb"/><rect x="742" y="87" width="166" height="306" fill="#94c4d7"/><rect x="922" y="87" width="166" height="306" fill="#afd2de"/><path d="M915 87v306M742 240h346" stroke="#fff" stroke-width="14"/>
+  <rect x="120" y="390" width="660" height="265" rx="28" fill="#f6f3ec"/><rect x="120" y="350" width="660" height="95" rx="25" fill="#687b83"/><rect x="160" y="375" width="260" height="110" rx="22" fill="#fff"/><rect x="440" y="375" width="260" height="110" rx="22" fill="#e6ddd1"/><path d="M120 540h660v115H120z" fill="#b26e59"/><path d="M170 655v55m560-55v55" stroke="#5e493a" stroke-width="20"/>
+  <rect x="850" y="535" width="230" height="35" rx="10" fill="#55463d"/><path d="M875 570v115m180-115v115" stroke="#55463d" stroke-width="20"/>
+  <path d="M900 515q35-125 75 0m-10 0q60-155 100 0" fill="#557c59"/><rect x="930" y="505" width="105" height="55" rx="12" fill="#cda77a"/>
+  <circle cx="245" cy="180" r="92" fill="#d5a85f"/><circle cx="245" cy="180" r="62" fill="#eee3cf"/>
+</svg>

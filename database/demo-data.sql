@@ -190,6 +190,13 @@ SELECT
 FROM generated
 ON CONFLICT (source_id, external_id) DO NOTHING;
 
+DELETE FROM listing_images AS image
+USING listings AS listing, sources AS source
+WHERE image.listing_id = listing.id
+  AND source.id = listing.source_id
+  AND source.name = 'AlgoRent Demo Housing'
+  AND listing.external_id LIKE 'demo-full-%';
+
 WITH demo_full AS (
     SELECT
         listing.id,
@@ -201,29 +208,22 @@ WITH demo_full AS (
 ),
 photo_urls AS (
     SELECT ARRAY[
-        'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267d',
-        'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2',
-        'https://images.unsplash.com/photo-1505693416388-ac5ce068fe85',
-        'https://images.unsplash.com/photo-1497366754035-f200968a6e72',
-        'https://images.unsplash.com/photo-1484154218962-a197022b5858',
-        'https://images.unsplash.com/photo-1554995207-c18c203602cb'
+        '/demo-listings/room-1.svg',
+        '/demo-listings/room-2.svg',
+        '/demo-listings/room-3.svg',
+        '/demo-listings/room-4.svg',
+        '/demo-listings/room-5.svg',
+        '/demo-listings/room-6.svg'
     ] AS urls
 )
 INSERT INTO listing_images (listing_id, image_url, display_order)
 SELECT
     demo_full.id,
-    photo_urls.urls[1 + ((demo_full.item_number + photo_number) % 6)]
-        || '?auto=format&fit=crop&w=1200&q=80',
+    photo_urls.urls[1 + ((demo_full.item_number + photo_number) % 6)],
     photo_number
 FROM demo_full
 CROSS JOIN photo_urls
-CROSS JOIN LATERAL generate_series(0, demo_full.item_number % 3) AS photos(photo_number)
-WHERE NOT EXISTS (
-    SELECT 1
-    FROM listing_images AS existing
-    WHERE existing.listing_id = demo_full.id
-      AND existing.display_order = photo_number
-);
+CROSS JOIN generate_series(0, 4) AS photos(photo_number);
 
 WITH reporter AS (
     SELECT id FROM users WHERE email = 'demo.reporter@example.com'
