@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800" role="img" aria-label="Clean demo apartment bathroom">
+  <defs><linearGradient id="tile" x2="0" y2="1"><stop stop-color="#edf3f2"/><stop offset="1" stop-color="#ccd9d7"/></linearGradient></defs>
+  <rect width="1200" height="650" fill="url(#tile)"/><path d="M0 130h1200M0 260h1200M0 390h1200M0 520h1200M200 0v650M400 0v650M600 0v650M800 0v650M1000 0v650" stroke="#b8c8c5" stroke-width="5"/><rect y="650" width="1200" height="150" fill="#8b7765"/>
+  <rect x="80" y="110" width="450" height="330" rx="20" fill="#b5d9df" stroke="#fff" stroke-width="20"/><path d="M305 120v310" stroke="#fff" stroke-width="10"/>
+  <rect x="675" y="90" width="360" height="320" rx="180" fill="#dce9e8" stroke="#fff" stroke-width="18"/><ellipse cx="855" cy="250" rx="130" ry="105" fill="#a9ccd2"/>
+  <rect x="650" y="495" width="430" height="55" rx="16" fill="#536967"/><rect x="690" y="550" width="350" height="135" fill="#eeeae1"/><ellipse cx="860" cy="500" rx="95" ry="38" fill="#fff"/><path d="M860 480v-80q0-40 50-40" fill="none" stroke="#6c7d7c" stroke-width="18"/>
+  <rect x="100" y="520" width="390" height="150" rx="25" fill="#f8f6ef"/><path d="M120 535h350v90q0 45-45 45H165q-45 0-45-45z" fill="#fff"/><circle cx="295" cy="550" r="16" fill="#6d807f"/>
+  <rect x="1100" y="160" width="18" height="390" fill="#536967"/><path d="M1025 180h165l-30 75h-105z" fill="#d3a45d"/>
+</svg>

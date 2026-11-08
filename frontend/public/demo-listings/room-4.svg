@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800" role="img" aria-label="Cozy demo apartment study room">
+  <defs><linearGradient id="wall" x2="1" y2="1"><stop stop-color="#dfe5ef"/><stop offset="1" stop-color="#b9c6d8"/></linearGradient></defs>
+  <rect width="1200" height="590" fill="url(#wall)"/><rect y="590" width="1200" height="210" fill="#7d604b"/>
+  <rect x="70" y="80" width="360" height="285" rx="8" fill="#fff"/><rect x="92" y="102" width="316" height="241" fill="#8fc1d8"/><path d="M250 102v241M92 225h316" stroke="#fff" stroke-width="13"/>
+  <rect x="590" y="410" width="480" height="42" rx="12" fill="#56453a"/><path d="M630 452v250m400-250v250" stroke="#56453a" stroke-width="24"/><rect x="670" y="300" width="240" height="105" rx="12" fill="#263b4b"/><rect x="700" y="325" width="180" height="55" fill="#86b6c9"/><path d="M790 405v48" stroke="#263b4b" stroke-width="18"/>
+  <path d="M770 510q-115 0-115 100v115h230V610q0-100-115-100z" fill="#b36c55"/><rect x="710" y="570" width="120" height="160" rx="35" fill="#ca8068"/>
+  <rect x="85" y="475" width="390" height="180" rx="30" fill="#e8e1d5"/><rect x="125" y="440" width="310" height="95" rx="25" fill="#637985"/><rect x="145" y="465" width="125" height="70" rx="18" fill="#d6aa64"/>
+  <path d="M1050 360q-50-170-105 0m90 0q55-130 100 0" fill="#5f8a68"/><rect x="980" y="350" width="115" height="105" rx="16" fill="#d5b184"/>
+</svg>
