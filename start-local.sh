@@ -34,6 +34,8 @@ export DB_PASSWORD=algorent
 export SPRING_DATASOURCE_URL="jdbc:postgresql://localhost:5433/algorent?sslmode=disable"
 export CORS_ALLOWED_ORIGINS=http://localhost:3000
 export NEXT_PUBLIC_API_URL=http://localhost:8080
+# No email server locally: sign-up codes are printed in backend/target/backend.log instead.
+export MAIL_ENABLED=false
 
 if [ ! -d frontend/node_modules ]; then
   echo "Installing frontend dependencies..."
@@ -70,6 +72,8 @@ echo
 echo "Backend:  http://localhost:8080/actuator/health"
 echo "Website:  http://localhost:3000  (starting now)"
 echo "Demo admin: admin123@gmail.com / admin123"
+echo "New accounts: the verification code is in backend/target/backend.log"
+echo "  (grep \"Verification code\" backend/target/backend.log)"
 echo
 cd frontend
 npm run dev

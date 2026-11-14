@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useEffect, useState } from "react";
+import { Suspense, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import dynamic from "next/dynamic";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -41,6 +41,9 @@ const strPageCss = `
   }
 `;
 
+// how many places to load at a time
+const numPageSize = 50;
+
 const strSelOn =
   "h-9 cursor-pointer rounded-full border border-[#3f5b6e] bg-[#3f5b6e] px-3.5 text-[13px] font-semibold text-white outline-none";
 
@@ -65,57 +68,79 @@ function SearchResults() {
   const [arrResults, setArrResults] = useState<ListingSummary[]>([]);
   const [arrMerge, setArrMerge] = useState<ListingSummary[]>([]);
   const [blnLoading, setBlnLoading] = useState(true);
+  const [numTotal, setNumTotal] = useState(0);
+  const [numNextPage, setNumNextPage] = useState(1);
+  const [blnMoreLoading, setBlnMoreLoading] = useState(false);
   const [strErr, setStrErr] = useState("");
   const [objZipSpots, setObjZipSpots] = useState<{ [strZip: string]: [number, number] }>({});
 
+  // the search as a query string, without the page number
+  const objQuery = new URLSearchParams({
+    city: strCity,
+    size: String(numPageSize),
+    sort: strSort,
+  });
+
+  if (strMoveIn != "" && strMoveOut != "") {
+    objQuery.set("moveIn", strMoveIn);
+    objQuery.set("moveOut", strMoveOut);
+  }
+
+  if (strMaxRent != "") {
+    objQuery.set("maxRent", strMaxRent);
+  }
+
+  if (strBeds == "studio") {
+    objQuery.set("propertyType", "studio");
+  } else if (strBeds != "") {
+    objQuery.set("minBedrooms", strBeds);
+  }
+
+  if (strRoomType != "") {
+    objQuery.set("listingType", strRoomType);
+  }
+
+  if (strProperty != "" && strBeds != "studio") {
+    objQuery.set("propertyType", strProperty);
+  }
+
+  const strQuery = objQuery.toString();
+
+  // the search that's on screen, so a slow "Show more" can't add results to a newer search
+  const objShownQuery = useRef(strQuery);
+
   // ask the backend for listings every time the search or a filter changes
   useEffect(() => {
+    // if the filters change again before this search finishes, ignore this one's results
+    const objRun = { blnStale: false };
+    const isStale = () => objRun.blnStale;
+
     async function loadResults() {
+      objShownQuery.current = strQuery;
       setBlnLoading(true);
       setStrErr("");
 
-      const objQuery = new URLSearchParams({
-        city: strCity,
-        size: "50",
-        sort: strSort,
-      });
-
-      if (strMoveIn != "" && strMoveOut != "") {
-        objQuery.set("moveIn", strMoveIn);
-        objQuery.set("moveOut", strMoveOut);
-      }
-
-      if (strMaxRent != "") {
-        objQuery.set("maxRent", strMaxRent);
-      }
-
-      if (strBeds == "studio") {
-        objQuery.set("propertyType", "studio");
-      } else if (strBeds != "") {
-        objQuery.set("minBedrooms", strBeds);
-      }
-
-      if (strRoomType != "") {
-        objQuery.set("listingType", strRoomType);
-      }
-
-      if (strProperty != "" && strBeds != "studio") {
-        objQuery.set("propertyType", strProperty);
-      }
-
       try {
         const objRes = await fetch(
-          `${strApiUrl}/api/listings/search?${objQuery}`,
+          `${strApiUrl}/api/listings/search?${strQuery}`,
         );
 
         const objData = await objRes.json();
 
+        if (isStale()) {
+          return;
+        }
+
         if (objRes.ok == false) {
           setStrErr(objData.detail || "Search failed.");
           setArrResults([]);
+          setNumTotal(0);
+          setNumNextPage(1);
           setArrMerge([]);
         } else {
           setArrResults(objData.results);
+          setNumTotal(objData.totalResults);
+          setNumNextPage(1);
 
           if (strMoveIn != "" && strMoveOut != "") {
             const objMergeQuery = new URLSearchParams({
@@ -128,6 +153,10 @@ function SearchResults() {
               `${strApiUrl}/api/listings/merge?${objMergeQuery}`,
             );
 
+            if (isStale()) {
+              return;
+            }
+
             if (objMergeRes.ok) {
               setArrMerge(await objMergeRes.json());
             } else {
@@ -138,26 +167,58 @@ function SearchResults() {
           }
         }
       } catch (objErr) {
+        if (isStale()) {
+          return;
+        }
         console.log("couldnt reach backend", objErr);
         setStrErr("Unable to connect to the server.");
         setArrResults([]);
+        setNumTotal(0);
         setArrMerge([]);
       } finally {
-        setBlnLoading(false);
+        if (!isStale()) {
+          setBlnLoading(false);
+        }
       }
     }
 
     loadResults();
-  }, [
-    strCity,
-    strMoveIn,
-    strMoveOut,
-    strMaxRent,
-    strBeds,
-    strRoomType,
-    strProperty,
-    strSort,
-  ]);
+
+    return () => {
+      objRun.blnStale = true;
+    };
+  }, [strQuery, strCity, strMoveIn, strMoveOut]);
+
+  // get the next page of results and add it to the list
+  async function loadMore() {
+    const strFor = strQuery;
+    setBlnMoreLoading(true);
+    try {
+      const objRes = await fetch(
+        `${strApiUrl}/api/listings/search?${strFor}&page=${numNextPage}`,
+      );
+      if (objShownQuery.current != strFor) {
+        return;
+      }
+      if (objRes.ok == true) {
+        const objData = await objRes.json();
+        setArrResults((arrOld) => [
+          ...arrOld,
+          ...objData.results.filter(
+            (objNew: ListingSummary) => !arrOld.some((objOld) => objOld.id == objNew.id),
+          ),
+        ]);
+        setNumNextPage(numNextPage + 1);
+      } else {
+        setStrErr("Couldn't load more places.");
+      }
+    } catch (objErr) {
+      console.log("couldnt reach backend", objErr);
+      setStrErr("Unable to connect to the server.");
+    } finally {
+      setBlnMoreLoading(false);
+    }
+  }
 
   // the listings dont have a spot yet, so look up where each zip code is
   useEffect(() => {
@@ -309,7 +370,7 @@ function SearchResults() {
           <span className="text-sm text-[#4a5866]">
             {blnLoading == true
               ? "Searching..."
-              : `${arrResults.length} places · ${strTitle}${strDates}`}
+              : `${numTotal} ${numTotal == 1 ? "place" : "places"} · ${strTitle}${strDates}`}
           </span>
 
           <label className="flex items-center gap-2 text-[13px] text-[#4a5866]">
@@ -388,6 +449,21 @@ function SearchResults() {
               </div>
             </div>
           ))}
+
+          {blnLoading == false && arrResults.length < numTotal && (
+            <div className="col-span-full flex justify-center">
+              <Button
+                type="button"
+                onClick={loadMore}
+                disabled={blnMoreLoading}
+                className="h-10 rounded-full bg-[#3f5b6e] px-5 text-sm font-semibold text-white hover:bg-[#344c5c]"
+              >
+                {blnMoreLoading == true
+                  ? "Loading..."
+                  : `Show more (${arrResults.length} of ${numTotal})`}
+              </Button>
+            </div>
+          )}
 
           {arrMerge.length == 2 && (
             <div className="col-span-full mt-5 border-t border-white/50 pt-5">

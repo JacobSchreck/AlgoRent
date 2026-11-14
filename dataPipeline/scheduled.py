@@ -31,7 +31,7 @@ async def run_all(sources, dry_run=False):
         try:
             result = await run(dry_run=dry_run)
             print(f"{name}: {result.valid} listings ({result.inserted} new, {result.updated} updated, "
-                  f"{result.invalid} rejected)")
+                  f"{result.invalid} rejected, {result.removed} no longer listed)")
         except Exception:
             traceback.print_exc()
             print(f"{name}: FAILED")

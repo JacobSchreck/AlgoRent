@@ -2,12 +2,17 @@ package com.algorent.auth;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.startsWith;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.reset;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -17,6 +22,7 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
 import org.springframework.http.MediaType;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.mail.MailSendException;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mock.web.MockHttpSession;
@@ -50,6 +56,141 @@ class AuthApiTest {
 
     @MockitoBean
     private JavaMailSender mailSender;
+
+    @Autowired
+    private LoginAttemptLimiter loginLimiter;
+
+    @BeforeEach
+    void forgetFailedLogins() {
+        loginLimiter.clear();
+    }
+
+    @Test
+    void failedVerificationEmailUndoesTheSignupSoTheUserCanRetry()
+            throws Exception {
+
+        doThrow(new MailSendException("mail server is down"))
+                .when(mailSender)
+                .send(any(SimpleMailMessage.class));
+
+        signUp()
+                .andExpect(status().isServiceUnavailable());
+
+        Integer users =
+                jdbc.queryForObject(
+                        "SELECT count(*) FROM users",
+                        Integer.class
+                );
+
+        assertThat(users)
+                .isZero();
+
+        reset(mailSender);
+
+        signUp()
+                .andExpect(status().isCreated());
+    }
+
+    @Test
+    void resendGivesTheSameAnswerForUnknownEmails()
+            throws Exception {
+
+        mvc.perform(
+                post("/api/auth/resend")
+                        .contentType(
+                                MediaType.APPLICATION_JSON
+                        )
+                        .content(
+                                """
+                                {"email": "nobody@example.com"}
+                                """
+                        )
+        )
+        .andExpect(status().isOk())
+        .andExpect(
+                jsonPath("$.message")
+                        .value(
+                                "If that account needs verifying, a new code is on its way."
+                        )
+        );
+
+        verifyNoInteractions(mailSender);
+    }
+
+    @Test
+    void resendWaitsAMinuteBetweenCodes()
+            throws Exception {
+
+        signUp()
+                .andExpect(status().isCreated());
+
+        mvc.perform(
+                post("/api/auth/resend")
+                        .contentType(
+                                MediaType.APPLICATION_JSON
+                        )
+                        .content(
+                                """
+                                {"email": "guest@example.com"}
+                                """
+                        )
+        )
+        .andExpect(status().isOk());
+
+        // only the signup email was sent
+        verify(mailSender)
+                .send(any(SimpleMailMessage.class));
+    }
+
+    @Test
+    void codeStopsWorkingAfterFiveWrongGuesses()
+            throws Exception {
+
+        signUp()
+                .andExpect(status().isCreated());
+
+        ArgumentCaptor<SimpleMailMessage> captor =
+                ArgumentCaptor.forClass(
+                        SimpleMailMessage.class
+                );
+
+        verify(mailSender)
+                .send(captor.capture());
+
+        String code =
+                captor.getValue()
+                        .getText()
+                        .replaceAll("\\D", "");
+
+        String wrongCode =
+                code.equals("000000")
+                        ? "111111"
+                        : "000000";
+
+        for (int i = 0; i < 5; i++) {
+            verifyCode(wrongCode)
+                    .andExpect(status().isBadRequest());
+        }
+
+        verifyCode(code)
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void loginIsBlockedAfterFiveWrongPasswords()
+            throws Exception {
+
+        signUp()
+                .andExpect(status().isCreated());
+
+        for (int i = 0; i < 5; i++) {
+            login("guest@example.com", "wrong-password")
+                    .andExpect(status().isUnauthorized());
+        }
+
+        login("guest@example.com", "correct-horse")
+                .andExpect(status().isTooManyRequests());
+    }
 
     @Test
     void signUpCreatesAccountWithHashedPassword()
@@ -382,6 +523,26 @@ class AuthApiTest {
                                         email,
                                         password
                                 )
+                        )
+        );
+    }
+
+    private org.springframework.test.web.servlet.ResultActions verifyCode(
+            String code
+    ) throws Exception {
+
+        return mvc.perform(
+                post("/api/auth/verify")
+                        .contentType(
+                                MediaType.APPLICATION_JSON
+                        )
+                        .content(
+                                """
+                                {
+                                  "email": "guest@example.com",
+                                  "code": "%s"
+                                }
+                                """.formatted(code)
                         )
         );
     }

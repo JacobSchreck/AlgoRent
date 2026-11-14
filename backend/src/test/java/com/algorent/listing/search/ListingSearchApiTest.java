@@ -12,6 +12,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.jdbc.Sql;
 import org.springframework.test.web.servlet.MockMvc;
 import org.testcontainers.containers.PostgreSQLContainer;
@@ -37,6 +38,9 @@ class ListingSearchApiTest {
 
     @Autowired
     private MockMvc mvc;
+
+    @Autowired
+    private JdbcTemplate jdbc;
 
     @Test
     void linkOnlyResultsExposeOnlyTheirTitleAndSourceLink() throws Exception {
@@ -192,5 +196,55 @@ class ListingSearchApiTest {
         mvc.perform(get("/actuator/health"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.status").value("UP"));
+    }
+
+    @Test
+    void mergeJoinsTwoBackToBackListings() throws Exception {
+        addMergeListing(1, "merge-first", "2027-05-01", "2027-06-30");
+        addMergeListing(1, "merge-second", "2027-07-01", "2027-08-31");
+
+        mergeSearch()
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[*].title").value(contains("Mergeville merge-first", "Mergeville merge-second")));
+    }
+
+    @Test
+    void mergeSkipsReportedListings() throws Exception {
+        addMergeListing(1, "merge-first", "2027-05-01", "2027-06-30");
+        addMergeListing(1, "merge-second", "2027-07-01", "2027-08-31");
+        jdbc.update("UPDATE listings SET flagged = TRUE WHERE external_id = 'merge-second'");
+
+        mergeSearch()
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$").isEmpty());
+    }
+
+    @Test
+    void mergeSkipsLinkOnlyListings() throws Exception {
+        addMergeListing(1, "merge-first", "2027-05-01", "2027-06-30");
+        addMergeListing(2, "merge-second", "2027-07-01", "2027-08-31");
+
+        mergeSearch()
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$").isEmpty());
+    }
+
+    private org.springframework.test.web.servlet.ResultActions mergeSearch() throws Exception {
+        return mvc.perform(get("/api/listings/merge")
+                .param("city", "Mergeville")
+                .param("moveIn", "2027-05-15")
+                .param("moveOut", "2027-08-15"));
+    }
+
+    private void addMergeListing(int sourceId, String externalId, String from, String until) {
+        jdbc.update(
+                """
+                INSERT INTO listings
+                    (source_id, external_id, source_url, title, city, state, monthly_rent,
+                     available_from, available_until, status)
+                VALUES (?, ?, ?, ?, 'Mergeville', 'FL', 800.00, ?::date, ?::date, 'ACTIVE')
+                """,
+                sourceId, externalId, "https://example.com/" + externalId, "Mergeville " + externalId,
+                from, until);
     }
 }

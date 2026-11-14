@@ -43,8 +43,16 @@ public class ListingSearchRepository {
                 JOIN listings b
                     ON LOWER(a.city) = LOWER(b.city)
                     AND a.id <> b.id
+                JOIN sources sa ON sa.id = a.source_id
+                JOIN sources sb ON sb.id = b.source_id
                 WHERE a.status = 'ACTIVE'
                 AND b.status = 'ACTIVE'
+                -- same rules as search: no reported listings, and link-only listings
+                -- can't be merged because their dates are hidden
+                AND a.flagged = FALSE
+                AND b.flagged = FALSE
+                AND COALESCE(sa.source_type, '') <> 'LINK_ONLY'
+                AND COALESCE(sb.source_type, '') <> 'LINK_ONLY'
                 AND LOWER(a.city) = LOWER(:city)
                 AND a.available_from IS NOT NULL
                 AND a.available_until IS NOT NULL
