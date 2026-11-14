@@ -36,6 +36,20 @@ for 30 seconds.
 That's about 2,250 requests per second. The database uses a small part of the 500 ms budget,
 and distance search is the slowest because it computes a distance for every listing in the city.
 
-### Full API (Spring Boot + database)
+### Full API (Spring Boot + database), Nov 14: PASS
 
-Run `load_test.py` against the local backend and paste its report here.
+`python3 loadtest/load_test.py` (25 users for 30 seconds), run against `./start-local.sh` with the
+5,000 demo listings on a MacBook Pro. The backend, the database and the test all ran on the same
+computer, so there is no network delay in these numbers.
+
+| Request | Count | Errors | Avg ms | p50 ms | p95 ms | p99 ms | Max ms |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| Search by city | 63,147 | 0 | 4.7 | 4.1 | 9.3 | 12.9 | 40.3 |
+| Search with dates and filters | 31,579 | 0 | 4.7 | 4.1 | 9.3 | 13.2 | 28.0 |
+| Search by distance | 23,755 | 0 | 5.6 | 5.0 | 10.4 | 14.2 | 34.0 |
+| Search page 3 | 7,860 | 0 | 5.1 | 4.5 | 9.5 | 12.9 | 27.9 |
+| Listing detail | 31,169 | 0 | 4.1 | 3.5 | 8.5 | 12.1 | 54.7 |
+| **All requests** | **157,510** | **0** | **4.7** | **4.2** | **9.3** | **13.1** | **54.7** |
+
+That's about 5,250 requests per second. 95% of requests finished within 9.3 ms (target: under 500 ms),
+with no errors (target: under 1%).
