@@ -50,6 +50,14 @@ The `-v` reset permanently deletes only the local Docker database volume.
 See [REVIEW_GUIDE.md](REVIEW_GUIDE.md) for the acceptance checklist and automated validation
 commands to give the reviewing team.
 
+## Mac or Linux
+
+`./start-local.sh` does the same as `setup-local.bat` and `start-local.bat`: it starts PostgreSQL, the
+backend and the frontend, and loads the 5,000 demo listings. It needs Docker Desktop (running),
+JDK 21 and Node.js 20 or newer. Press Ctrl+C to stop; `docker compose down` stops the database.
+
+To load test the running app, see [loadtest/README.md](loadtest/README.md).
+
 ## Repository layout
 
 | Folder | What it is |

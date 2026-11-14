@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ChevronDown, ChevronUp, Plus, Trash2 } from "lucide-react";
@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import AuthAccountLinks from "@/components/AuthAccountLinks";
 import { strApiUrl, ListingDetail, showDates, showMoney } from "@/lib/listings";
-import { getSaved, setSaved, SavedItem } from "@/lib/saved";
+import { loadSaved, saveItem, removeItem, SavedItem } from "@/lib/saved";
 
 const objFont = Plus_Jakarta_Sans({ subsets: ["latin"], weight: ["500", "600", "700", "800"] });
 
@@ -42,6 +42,13 @@ export default function SavedPage() {
   const [strError, setStrError] = useState("");
   const [objExpandedNotes, setObjExpandedNotes] = useState<Record<string, boolean>>({});
   const [objLongNotes, setObjLongNotes] = useState<Record<string, boolean>>({});
+  // note typing is saved after a short pause instead of on every key
+  const objNoteTimers = useRef<Record<number, ReturnType<typeof setTimeout>>>({});
+  // the latest list, so a delayed note save never sends an older status
+  const objLatest = useRef<SavedItem[]>([]);
+  useEffect(() => {
+    objLatest.current = arrSaved;
+  }, [arrSaved]);
 
   // Saved places are private to a signed-in browser session. A note query opens the
   // requested listing in the Messaged host column after authentication succeeds.
@@ -62,20 +69,35 @@ export default function SavedPage() {
         return;
       }
 
-      let arrHave = getSaved();
+      let arrHave: SavedItem[] = [];
+      try {
+        const arrLoaded = await loadSaved();
+        if (arrLoaded == null) {
+          const strReturnTo = `${window.location.pathname}${window.location.search}`;
+          objRouter.replace(`/login?next=${encodeURIComponent(strReturnTo)}`);
+          return;
+        }
+        arrHave = arrLoaded;
+      } catch {
+        setStrError("Unable to load your saved listings. Please try again.");
+        setBlnLoading(false);
+        return;
+      }
       const strNoteId = new URLSearchParams(window.location.search).get("note");
       const numNoteId = Number(strNoteId);
       if (Number.isInteger(numNoteId) && numNoteId > 0) {
         const objExisting = arrHave.find((objItem) => objItem.id == numNoteId);
-        if (objExisting == undefined) {
-          arrHave = [...arrHave, { id: numNoteId, status: "Messaged host", notes: [] }];
-        } else {
-          arrHave = arrHave.map((objItem) => objItem.id == numNoteId ? { ...objItem, status: "Messaged host" } : objItem);
+        const objMessaged: SavedItem = objExisting == undefined
+          ? { id: numNoteId, status: "Messaged host", notes: [] }
+          : { ...objExisting, status: "Messaged host" };
+        arrHave = objExisting == undefined
+          ? [...arrHave, objMessaged]
+          : arrHave.map((objItem) => objItem.id == numNoteId ? objMessaged : objItem);
+        if (!(await saveItem(objMessaged))) {
+          setStrError("Couldn't save your change. Check your connection and try again.");
         }
       }
 
-      // Re-save normalized data so empty note rows do not return on the next visit.
-      setSaved(arrHave);
       setArrSaved(arrHave);
 
       const arrFound: ListingDetail[] = [];
@@ -96,6 +118,20 @@ export default function SavedPage() {
     loadSaved();
   }, [objRouter]);
 
+  async function saveOne(objItem: SavedItem | undefined) {
+    if (objItem != undefined && !(await saveItem(objItem))) {
+      setStrError("Couldn't save your change. Check your connection and try again.");
+    }
+  }
+
+  function saveNotesSoon(numId: number) {
+    clearTimeout(objNoteTimers.current[numId]);
+    objNoteTimers.current[numId] = setTimeout(
+      () => saveOne(objLatest.current.find((objItem) => objItem.id == numId)),
+      700,
+    );
+  }
+
   function changeStatus(numId: number, strStatus: string) {
     const arrNew = arrSaved.map((objItem) => {
       if (objItem.id == numId) {
@@ -105,7 +141,8 @@ export default function SavedPage() {
       }
     });
     setArrSaved(arrNew);
-    setSaved(arrNew);
+    clearTimeout(objNoteTimers.current[numId]);
+    saveOne(arrNew.find((objItem) => objItem.id == numId));
   }
 
   function changeNote(numId: number, numNoteIndex: number, strNote: string) {
@@ -116,7 +153,7 @@ export default function SavedPage() {
       return { ...objItem, notes: arrNotes };
     });
     setArrSaved(arrNew);
-    setSaved(arrNew);
+    saveNotesSoon(numId);
   }
 
   function addNote(numId: number) {
@@ -126,7 +163,6 @@ export default function SavedPage() {
       return { ...objItem, notes: [...arrNotes, ""] };
     });
     setArrSaved(arrNew);
-    setSaved(arrNew);
   }
 
   function deleteNote(numId: number, numNoteIndex: number) {
@@ -134,7 +170,8 @@ export default function SavedPage() {
       ? { ...objItem, notes: (objItem.notes ?? []).filter((_, numIndex) => numIndex != numNoteIndex) }
       : objItem);
     setArrSaved(arrNew);
-    setSaved(arrNew);
+    clearTimeout(objNoteTimers.current[numId]);
+    saveOne(arrNew.find((objItem) => objItem.id == numId));
     const strPrefix = `${numId}-`;
     setObjExpandedNotes((objCurrent) => Object.fromEntries(Object.entries(objCurrent).filter(([strKey]) => !strKey.startsWith(strPrefix))));
     setObjLongNotes((objCurrent) => Object.fromEntries(Object.entries(objCurrent).filter(([strKey]) => !strKey.startsWith(strPrefix))));
@@ -160,7 +197,10 @@ export default function SavedPage() {
   function removeOne(numId: number) {
     const arrNew = arrSaved.filter((objItem) => objItem.id != numId);
     setArrSaved(arrNew);
-    setSaved(arrNew);
+    clearTimeout(objNoteTimers.current[numId]);
+    removeItem(numId).then((blnOk) => {
+      if (!blnOk) setStrError("Couldn't remove that listing. Check your connection and try again.");
+    });
     setArrDetails(arrDetails.filter((objList) => objList.id != numId));
   }
 
