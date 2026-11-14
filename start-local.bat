@@ -30,6 +30,8 @@ set "DB_PASSWORD=algorent"
 set "SPRING_DATASOURCE_URL=jdbc:postgresql://localhost:5433/algorent?sslmode=disable"
 set "CORS_ALLOWED_ORIGINS=http://localhost:3000"
 set "NEXT_PUBLIC_API_URL=http://localhost:8080"
+rem No email server locally: sign-up codes are printed in the backend window instead.
+set "MAIL_ENABLED=false"
 
 echo Opening backend and frontend terminals...
 start "AlgoRent Backend" /D "%~dp0backend" cmd /k "call mvnw.cmd spring-boot:run"
@@ -56,6 +58,7 @@ start "AlgoRent Frontend" /D "%~dp0frontend" cmd /k "call npm.cmd run dev"
 
 echo The website will be available at http://localhost:3000
 echo The backend health check is at http://localhost:8080/actuator/health
+echo New accounts: the verification code is printed in the AlgoRent Backend window.
 echo Keep both new terminal windows open while reviewing the app.
 echo.
 echo Waiting for the frontend...

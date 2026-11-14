@@ -130,8 +130,10 @@ python -m unittest discover -s dataPipeline/tests -v
 - All valid listings in one run are UPSERTed in one database transaction.
 - A listing's ordered image rows are rewritten only when its public source photo list changes.
 - A failed fetch or database batch never marks existing listings inactive.
-- Missing source records are not deactivated in this first version. Add that only after multiple
-  successful production runs establish a safe freshness window.
+- After a complete live fetch, the source's listings that were not in it are marked `REMOVED`
+  (they no longer show in search). Listings rejected by validation count as still listed. If a
+  removed listing comes back in a later run, it is set to `ACTIVE` again. Fixture runs and dry runs
+  never remove anything, and a fetch that returns no listings removes nothing.
 - Scheduling is intentionally outside this version; run the CLI manually until repeat runs and
   update behavior have been checked against the real source.
 

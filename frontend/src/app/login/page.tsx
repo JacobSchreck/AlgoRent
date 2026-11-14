@@ -142,7 +142,7 @@ export default function LoginPage() {
         return;
       }
 
-      setStrMsg("A new verification code was sent.");
+      setStrMsg(objData.message || "A new verification code was sent.");
 
     } catch (objErr) {
       console.log("couldnt reach backend", objErr);

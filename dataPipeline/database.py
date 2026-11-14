@@ -161,3 +161,29 @@ def upsert_listings(source_id: int, listings: Iterable[Listing]) -> UpsertResult
                 _sync_listing_images(cur, listing_id, listing.image_urls)
                 images += len(listing.image_urls)
     return UpsertResult(inserted=inserted, updated=updated, images=images)
+
+
+def mark_missing_listings_removed(source_id: int, seen_external_ids: Iterable[str]) -> int:
+    """Mark this source's active listings that were not in the latest full fetch as REMOVED.
+
+    Only call this after a complete fetch. An empty fetch removes nothing, because a source
+    returning zero listings is much more likely to be a scraper problem than a real result.
+    """
+
+    seen = sorted(set(seen_external_ids))
+    if not seen:
+        return 0
+    with get_connection() as conn:
+        with conn.cursor() as cur:
+            cur.execute(
+                """
+                UPDATE listings
+                SET status = 'REMOVED',
+                    updated_at = CURRENT_TIMESTAMP
+                WHERE source_id = %s
+                  AND status = 'ACTIVE'
+                  AND NOT (external_id = ANY(%s))
+                """,
+                (source_id, seen),
+            )
+            return cur.rowcount

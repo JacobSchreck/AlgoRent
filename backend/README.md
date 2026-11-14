@@ -20,17 +20,19 @@ Requires JDK 21. `./mvnw` downloads the right Maven version automatically (or us
 
 ### Configuration
 
-The database settings use the same variable names as `dataPipeline/.env`. The defaults match `docker-compose.yml`, so nothing needs to be set for local work.
+The database settings use the same variable names as `dataPipeline/.env`. There are no defaults:
+set them before starting the backend. `start-local.sh` / `start-local.bat` set everything for the
+local Docker database.
 
-| Variable | Default |
+| Variable | Notes |
 | --- | --- |
-| `DB_HOST` | `localhost` |
-| `DB_PORT` | `5433` |
-| `DB_NAME` | `algorent` |
-| `DB_USER` | `algorent` |
-| `DB_PASSWORD` | `algorent` |
-| `PORT` | `8080` |
-| `CORS_ALLOWED_ORIGINS` | `http://localhost:3000` (comma-separated) |
+| `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER`, `DB_PASSWORD` | **Required.** Local Docker: `localhost`, `5433`, `algorent`, `algorent`, `algorent` |
+| `SPRING_DATASOURCE_URL` | Optional. The default URL requires SSL (for Supabase). The local Docker database has no SSL, so set `jdbc:postgresql://localhost:5433/algorent?sslmode=disable` |
+| `PORT` | Default `8080` |
+| `CORS_ALLOWED_ORIGINS` | Default `http://localhost:3000` (comma-separated) |
+| `MAIL_HOST`, `MAIL_PORT`, `MAIL_USERNAME`, `MAIL_PASSWORD` | SMTP server for verification codes. Default `localhost:587` |
+| `MAIL_ENABLED` | Default `true`. Set `false` to skip email and print verification codes in the backend log instead. The local start scripts do this |
+| `SESSION_COOKIE_SAME_SITE`, `SESSION_COOKIE_SECURE` | Default `lax` and `false`. If the website and the API are on different domains, set `none` and `true` (needs HTTPS), or sign-in won't stick |
 
 ### Tests
 
@@ -150,14 +152,23 @@ Returns the same fields as a search result, plus `description`, `securityDeposit
 
 Listings that are no longer active are still returned, with their `status` (for example `REMOVED`), so a saved listing can be shown as "no longer available". An unknown id returns `404` with title `Listing not found`. A non-numeric id returns `400`.
 
+### `GET /api/listings/merge`
+
+For a stay no single listing covers: finds two back-to-back listings in a city that cover it
+together (the first starts by `moveIn`, the second starts the day after the first ends or sooner
+and runs to `moveOut`). Takes `city`, `moveIn` and `moveOut`. Returns the two listings in order, or
+`[]`. Reported listings and link-only listings (their dates are hidden) are never used.
+
 ### Accounts: `/api/auth/*`
 
 Session-based sign-in. The browser must send cookies: `fetch(url, { credentials: "include" })`.
 
 | Endpoint | Body | Success | Errors |
 | --- | --- | --- | --- |
-| `POST /api/auth/signup` | `{"fullName", "email", "password"}` | `201` | `400` invalid input (password under 8 characters, bad email), `409` email already used |
-| `POST /api/auth/login` | `{"email", "password"}` | `200`, starts a session | `400` missing fields, `401` wrong email or password |
+| `POST /api/auth/signup` | `{"fullName", "email", "password"}` | `201`, emails a 6-digit code | `400` invalid input (password under 8 characters, bad email), `409` email already used, `503` the email couldn't be sent (the account is not created) |
+| `POST /api/auth/verify` | `{"email", "code"}` | `200`, marks the email verified | `400` wrong or expired code. A code stops working after 5 wrong tries or 10 minutes |
+| `POST /api/auth/resend` | `{"email"}` | `200` with the same message whether or not the account exists. Sends a new code only to unverified accounts, at most once a minute | `400` bad email, `503` the email couldn't be sent |
+| `POST /api/auth/login` | `{"email", "password"}` | `200`, starts a session | `400` missing fields, `401` wrong email or password, `403` email not verified, `429` 5 wrong passwords in 15 minutes |
 | `GET /api/auth/me` | none | `200` `{"id", "email", "firstName", "lastName", "role"}` | `401` not signed in |
 | `POST /api/auth/logout` | none | `200`, ends the session | none |
 

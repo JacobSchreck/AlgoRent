@@ -12,6 +12,7 @@ from dotenv import load_dotenv
 
 try:
     from .database import (
+        mark_missing_listings_removed,
         source_is_enabled,
         upsert_listings,
         upsert_source,
@@ -26,6 +27,7 @@ try:
     from .scrapers.subleaps import SubLeapsClient
 except ImportError:
     from database import (
+        mark_missing_listings_removed,
         source_is_enabled,
         upsert_listings,
         upsert_source,
@@ -52,6 +54,7 @@ class PipelineResult:
     updated: int
     images: int
     source_count_verified: bool
+    removed: int = 0
 
 
 def required_env(name: str) -> str:
@@ -59,6 +62,13 @@ def required_env(name: str) -> str:
     if value is None or not value.strip():
         raise RuntimeError(f"Missing required environment variable: {name}")
     return value.strip()
+
+
+def seen_ids(listings, failures) -> list[str]:
+    """Every listing id the source returned, including ones that failed validation."""
+    ids = [listing.external_id for listing in listings]
+    ids += [failure.external_id for failure in failures if failure.external_id]
+    return ids
 
 
 def load_fixture(path: Path) -> list[dict[str, Any]]:
@@ -100,10 +110,13 @@ async def run_reletme_pipeline(
     if not source_is_enabled(source_id):
         raise RuntimeError("ReletMe source is disabled in the sources table")
     persisted = upsert_listings(source_id, listings)
+    # A fixture is only a sample, so only a full live fetch can tell us a listing is gone.
+    removed = 0 if fixture is not None else mark_missing_listings_removed(
+        source_id, seen_ids(listings, failures))
 
     return PipelineResult(
         len(raw_records), len(listings), len(failures), persisted.inserted, persisted.updated,
-        persisted.images, fixture is None,
+        persisted.images, fixture is None, removed,
     )
 
 
@@ -133,9 +146,12 @@ async def run_subleaps_pipeline(
     if not source_is_enabled(source_id):
         raise RuntimeError("SubLeaps source is disabled in the sources table")
     persisted = upsert_listings(source_id, listings)
+    # A fixture is only a sample, so only a full live fetch can tell us a listing is gone.
+    removed = 0 if fixture is not None else mark_missing_listings_removed(
+        source_id, seen_ids(listings, failures))
     return PipelineResult(
         len(raw_records), len(listings), len(failures), persisted.inserted, persisted.updated,
-        persisted.images, fixture is None,
+        persisted.images, fixture is None, removed,
     )
 
 
@@ -166,9 +182,12 @@ async def run_rotatingroom_pipeline(
     if not source_is_enabled(source_id):
         raise RuntimeError("RotatingRoom source is disabled in the sources table")
     persisted = upsert_listings(source_id, listings)
+    # A fixture is only a sample, so only a full live fetch can tell us a listing is gone.
+    removed = 0 if fixture is not None else mark_missing_listings_removed(
+        source_id, seen_ids(listings, failures))
     return PipelineResult(
         len(raw_records), len(listings), len(failures), persisted.inserted, persisted.updated,
-        persisted.images, False,
+        persisted.images, False, removed,
     )
 
 
@@ -199,6 +218,7 @@ def main() -> None:
     print(f"Inserted:   {result.inserted}")
     print(f"Updated:    {result.updated}")
     print(f"Images:     {result.images}")
+    print(f"Removed:    {result.removed}")
     if result.source_count_verified:
         print("Fetched count verified against the source's reported total.")
     print("Dry run complete; no database changes were made." if args.dry_run else "Ingestion complete.")

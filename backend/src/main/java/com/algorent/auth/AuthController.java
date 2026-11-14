@@ -3,11 +3,15 @@ package com.algorent.auth;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.mail.MailException;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -20,6 +24,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.regex.Pattern;
@@ -35,14 +40,34 @@ public class AuthController {
 
     private static final SecureRandom RANDOM = new SecureRandom();
 
+    private static final Logger log = LoggerFactory.getLogger(AuthController.class);
+
+    // a code stops working after this many wrong guesses
+    private static final int MAX_CODE_ATTEMPTS = 5;
+
+    // resend won't send another code until the last one is this old
+    private static final int RESEND_COOLDOWN_SECONDS = 60;
+
+    private static final String RESEND_MESSAGE =
+            "If that account needs verifying, a new code is on its way.";
+
     private final JdbcTemplate jdbc;
     private final JavaMailSender mailSender;
+    private final LoginAttemptLimiter loginLimiter;
+    private final boolean mailEnabled;
 
     private final PasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
 
-    public AuthController(JdbcTemplate jdbc, JavaMailSender mailSender) {
+    public AuthController(
+            JdbcTemplate jdbc,
+            JavaMailSender mailSender,
+            LoginAttemptLimiter loginLimiter,
+            @Value("${algorent.mail.enabled:true}") boolean mailEnabled
+    ) {
         this.jdbc = jdbc;
         this.mailSender = mailSender;
+        this.loginLimiter = loginLimiter;
+        this.mailEnabled = mailEnabled;
     }
 
     @PostMapping("/signup")
@@ -142,10 +167,24 @@ public class AuthController {
                         email
                 );
 
-        sendVerificationCode(
-                userId,
-                email
-        );
+        try {
+            sendVerificationCode(
+                    userId,
+                    email
+            );
+
+        } catch (MailException e) {
+            // Without the email the user could never verify, and the address would be
+            // stuck as "already used". Remove the account so they can try again later.
+            log.error("Could not send the verification email during signup", e);
+
+            jdbc.update(
+                    "DELETE FROM users WHERE id = ?",
+                    userId
+            );
+
+            return emailFailed();
+        }
 
         return ResponseEntity
                 .status(HttpStatus.CREATED)
@@ -211,6 +250,7 @@ public class AuthController {
                     WHERE user_id = ?
                       AND channel = 'EMAIL'
                       AND used_at IS NULL
+                      AND failed_attempts < ?
                       AND expires_at > (CURRENT_TIMESTAMP AT TIME ZONE 'UTC')
                     ORDER BY created_at DESC
                     LIMIT 1
@@ -222,7 +262,8 @@ public class AuthController {
                                             "token_hash"
                                     )
                             ),
-                    userId
+                    userId,
+                    MAX_CODE_ATTEMPTS
             );
 
         } catch (EmptyResultDataAccessException e) {
@@ -231,11 +272,24 @@ public class AuthController {
             );
         }
 
-        if (token == null
-                || !passwordEncoder.matches(
-                        request.code().trim(),
-                        token.tokenHash()
-                )) {
+        if (token == null) {
+            return badRequest(
+                    "Invalid or expired verification code."
+            );
+        }
+
+        if (!passwordEncoder.matches(
+                request.code().trim(),
+                token.tokenHash()
+        )) {
+            jdbc.update(
+                    """
+                    UPDATE verification_tokens
+                    SET failed_attempts = failed_attempts + 1
+                    WHERE id = ?
+                    """,
+                    token.id()
+            );
 
             return badRequest(
                     "Invalid or expired verification code."
@@ -286,35 +340,60 @@ public class AuthController {
                 .trim()
                 .toLowerCase(Locale.ROOT);
 
-        Integer userId;
-
-        try {
-            userId = jdbc.queryForObject(
-                    """
-                    SELECT id
-                    FROM users
-                    WHERE email = ?
-                    """,
-                    Integer.class,
-                    email
-            );
-
-        } catch (EmptyResultDataAccessException e) {
-            return badRequest(
-                    "Account not found."
-            );
-        }
-
-        sendVerificationCode(
-                userId,
+        // Same answer whether or not the account exists, so this can't be used to
+        // find out who has an account.
+        List<Integer> userIds = jdbc.queryForList(
+                """
+                SELECT id
+                FROM users
+                WHERE email = ?
+                  AND email_verified_at IS NULL
+                """,
+                Integer.class,
                 email
         );
 
+        if (userIds.isEmpty()) {
+            return ResponseEntity.ok(
+                    Map.of("message", RESEND_MESSAGE)
+            );
+        }
+
+        int userId = userIds.get(0);
+
+        Integer recentCodes = jdbc.queryForObject(
+                """
+                SELECT count(*)
+                FROM verification_tokens
+                WHERE user_id = ?
+                  AND channel = 'EMAIL'
+                  AND created_at > CURRENT_TIMESTAMP - make_interval(secs => ?)
+                """,
+                Integer.class,
+                userId,
+                RESEND_COOLDOWN_SECONDS
+        );
+
+        if (recentCodes != null && recentCodes > 0) {
+            // a code was sent less than a minute ago; don't flood their inbox
+            return ResponseEntity.ok(
+                    Map.of("message", RESEND_MESSAGE)
+            );
+        }
+
+        try {
+            sendVerificationCode(
+                    userId,
+                    email
+            );
+
+        } catch (MailException e) {
+            log.error("Could not resend the verification email", e);
+            return emailFailed();
+        }
+
         return ResponseEntity.ok(
-                Map.of(
-                        "message",
-                        "Verification code sent."
-                )
+                Map.of("message", RESEND_MESSAGE)
         );
     }
 
@@ -336,6 +415,17 @@ public class AuthController {
         String email = request.email()
                 .trim()
                 .toLowerCase(Locale.ROOT);
+
+        if (loginLimiter.isBlocked(email)) {
+            return ResponseEntity
+                    .status(HttpStatus.TOO_MANY_REQUESTS)
+                    .body(
+                            Map.of(
+                                    "message",
+                                    "Too many wrong passwords. Try again in 15 minutes."
+                            )
+                    );
+        }
 
         UserRow user;
 
@@ -376,6 +466,7 @@ public class AuthController {
             );
 
         } catch (EmptyResultDataAccessException e) {
+            loginLimiter.recordFailure(email);
             return unauthorized();
         }
 
@@ -384,8 +475,11 @@ public class AuthController {
                         request.password(),
                         user.passwordHash()
                 )) {
+            loginLimiter.recordFailure(email);
             return unauthorized();
         }
+
+        loginLimiter.recordSuccess(email);
 
         if (user.emailVerifiedAt() == null) {
             return ResponseEntity
@@ -569,7 +663,24 @@ public class AuthController {
                         + code
         );
 
+        if (!mailEnabled) {
+            // Local development without an email server: print the code instead.
+            log.warn("Email is turned off (MAIL_ENABLED=false). Verification code for {}: {}", email, code);
+            return;
+        }
+
         mailSender.send(message);
+    }
+
+    private ResponseEntity<?> emailFailed() {
+        return ResponseEntity
+                .status(HttpStatus.SERVICE_UNAVAILABLE)
+                .body(
+                        Map.of(
+                                "message",
+                                "We couldn't send the verification email. Please try again later."
+                        )
+                );
     }
 
     private ResponseEntity<?> badRequest(
