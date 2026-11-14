@@ -12,7 +12,7 @@ import { Card } from "@/components/ui/card";
 import ReportListingDialog from "@/components/ReportListingDialog";
 import AuthAccountLinks from "@/components/AuthAccountLinks";
 import { strApiUrl, ListingDetail, showDates, showMoney, showPlace, showRooms, showType } from "@/lib/listings";
-import { getSaved, setSaved } from "@/lib/saved";
+import { loadSaved, saveItem, removeItem } from "@/lib/saved";
 
 // the map can only load in the browser, not on the server
 const ListingMap = dynamic(() => import("@/components/ListingMap"), { ssr: false });
@@ -63,7 +63,10 @@ export default function ListingPage() {
   useEffect(() => {
     async function loadListing() {
       setBlnLoading(true);
-      setBlnSaved(getSaved().some((objItem) => objItem.id == Number(strId)));
+      // only signed-in users have a saved list; signed-out users see "Save"
+      loadSaved()
+        .then((arrSaved) => setBlnSaved(arrSaved != null && arrSaved.some((objItem) => objItem.id == Number(strId))))
+        .catch(() => setBlnSaved(false));
       try {
         const objRes = await fetch(`${strApiUrl}/api/listings/${strId}`);
         if (objRes.ok == true) {
@@ -83,13 +86,16 @@ export default function ListingPage() {
     loadListing();
   }, [strId]);
 
-  function toggleSave() {
-    const arrHave = getSaved();
+  async function toggleSave() {
+    // saving needs an account, so send signed-out users to log in and back here
+    const objMe = await fetch(`${strApiUrl}/api/auth/me`, { credentials: "include" }).catch(() => null);
+    if (objMe == null || objMe.status == 401) {
+      objRouter.push(`/login?next=${encodeURIComponent(`/listings/${strId}`)}`);
+      return;
+    }
     if (blnSaved == true) {
-      setSaved(arrHave.filter((objItem) => objItem.id != Number(strId)));
-      setBlnSaved(false);
-    } else {
-      setSaved([...arrHave, { id: Number(strId), status: "Interested", notes: [] }]);
+      if (await removeItem(Number(strId))) setBlnSaved(false);
+    } else if (await saveItem({ id: Number(strId), status: "Interested", notes: [] })) {
       setBlnSaved(true);
     }
   }

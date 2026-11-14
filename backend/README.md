@@ -195,6 +195,26 @@ Promote a trusted local account explicitly; public signup always creates a regul
 UPDATE users SET role = 'ADMIN' WHERE email = 'admin@example.com';
 ```
 
+### Saved listings: `/api/saved`
+
+Each signed-in user's saved listings, with the status and notes shown on the Saved page. Every
+endpoint needs a signed-in session (send cookies with `credentials: "include"`), and a user only
+sees their own list. Signed out, every endpoint returns `401`.
+
+| Endpoint | Body | Result |
+| --- | --- | --- |
+| `GET /api/saved` | none | `200` `[{"id", "status", "notes": [...]}]`, oldest first |
+| `PUT /api/saved/{listingId}` | `{"status", "notes": [...]}` | `200` with the saved item. Saves the listing, or replaces its status and notes |
+| `DELETE /api/saved/{listingId}` | none | `204`. Removes it and its notes |
+
+- `status` is one of `Interested` (the default), `Messaged host`, `Toured` or `Applied`.
+- Blank notes are dropped. A listing can have up to 20 notes of up to 2,000 characters each.
+- Errors: `400` for a bad status or note, and `404` for an unknown listing.
+
+The data is in the `favorites` and `favorite_notes` tables (migration V6). The Saved page used to keep
+this list in the browser. The first time a user opens it signed in, anything saved in the browser is
+moved into their account.
+
 ### `GET /actuator/health`
 
 Returns `{"status":"UP"}` when the app and its database connection are healthy.
