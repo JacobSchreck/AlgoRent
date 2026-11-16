@@ -39,10 +39,10 @@ const strPageCss = `
   }
 `;
 
-const strPhoto = "flex items-center justify-center overflow-hidden rounded-[18px] border border-white/60 bg-white/45 text-xs text-[#4a5866]";
+const strPhoto = "flex items-center justify-center overflow-hidden rounded-[18px] border border-white/60 bg-white/45 text-xs text-[#38444f]";
 const strInfoBox = "flex-col gap-1 rounded-2xl border border-white/60 bg-white/50 p-4 text-base text-[#1c2733] shadow-none ring-0";
 const strOutlineBtn = "h-11 flex-1 rounded-full border border-[#1c2733]/20 bg-transparent text-sm font-semibold text-[#1c2733] hover:bg-white/50";
-const strInStyle = "h-auto rounded-none border-none bg-transparent p-0 text-sm text-[#1c2733] md:text-sm focus-visible:ring-0";
+const strInStyle = "h-auto rounded-none border-none bg-transparent p-0 text-sm text-[#1c2733] md:text-sm focus-visible:ring-0 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#2c4556]";
 const strTag = "rounded-full bg-white/60 px-3 py-1.5 text-[13px] font-medium";
 
 export default function ListingPage() {
@@ -167,9 +167,9 @@ export default function ListingPage() {
 
       {/* z-[1100] keeps the nav above the map when you scroll */}
       <nav className="sticky top-0 z-[1100] border-b border-white/35 bg-white/25 backdrop-blur-lg">
-        <div className="mx-auto flex h-16 max-w-[1232px] items-center justify-between px-8">
+        <div className="mx-auto flex min-h-16 max-w-[1232px] flex-wrap items-center justify-between gap-x-6 gap-y-2 px-4 py-3 sm:px-8">
           <Link href="/" className="text-[18px] font-bold tracking-tight">AlgoRent</Link>
-          <div className="flex items-center gap-6 text-[14px] font-medium">
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-[14px] font-medium sm:gap-x-6">
             <Link href="/search">Search</Link>
             <Link href="/saved">Saved</Link>
             <AuthAccountLinks />
@@ -177,20 +177,22 @@ export default function ListingPage() {
         </div>
       </nav>
 
+      <main>
+
       {blnLoading == true && (
-        <p className="mx-auto max-w-[1232px] px-8 pt-16 text-[#4a5866]">Loading...</p>
+        <p className="mx-auto max-w-[1232px] px-8 pt-16 text-[#38444f]">Loading...</p>
       )}
 
       {blnLoading == false && objList == null && (
         <div className="mx-auto flex max-w-[1232px] flex-col gap-3 px-8 pt-16">
           <h1 className="text-[30px] font-semibold">{strErr}</h1>
-          <Link href="/search" className="text-[15px] font-semibold text-[#3f5b6e]">Back to search</Link>
+          <Link href="/search" className="text-[15px] font-semibold text-[#2c4556]">Back to search</Link>
         </div>
       )}
 
       {objList != null && objList.sourceType == "LINK_ONLY" && (
         <div className="mx-auto flex max-w-[1232px] flex-col gap-[18px] px-8 pt-5">
-          <Button type="button" onClick={() => objRouter.back()} style={{ cursor: "pointer" }} className="fade-in h-auto w-fit cursor-pointer bg-transparent p-0 text-sm font-semibold text-[#3f5b6e] underline-offset-4 hover:bg-transparent hover:text-[#24313d] hover:underline">
+          <Button type="button" onClick={() => objRouter.back()} style={{ cursor: "pointer" }} className="fade-in h-auto w-fit cursor-pointer bg-transparent p-0 text-sm font-semibold text-[#2c4556] underline-offset-4 hover:bg-transparent hover:text-[#24313d] hover:underline">
             ← Back to results
           </Button>
 
@@ -198,12 +200,12 @@ export default function ListingPage() {
             <div className="fade-in delay-1 flex flex-1 flex-col gap-[22px]">
               <div className="flex flex-col gap-2">
                 <h1 className="text-[40px] font-semibold leading-[1.08] tracking-[-1px] text-[#24313d]">{objList.title}</h1>
-                <p className="text-[15px] text-[#4a5866]">Listed on {objList.sourceName || "an external source"}</p>
+                <p className="text-[15px] text-[#38444f]">Listed on {objList.sourceName || "an external source"}</p>
               </div>
 
               <Card className="max-w-[640px] gap-2 rounded-2xl border border-white/60 bg-white/50 p-5 text-base text-[#1c2733] shadow-none ring-0">
                 <h2 className="text-xl font-semibold">Listing details</h2>
-                <p className="text-[15px] leading-relaxed text-[#4a5866]">This source provides its listing information on the original website.</p>
+                <p className="text-[15px] leading-relaxed text-[#38444f]">This source provides its listing information on the original website.</p>
               </Card>
 
               <div className="w-fit"><ReportListingDialog listingId={objList.id} listingTitle={objList.title} /></div>
@@ -228,7 +230,7 @@ export default function ListingPage() {
 
       {objList != null && objList.sourceType != "LINK_ONLY" && (
         <div className="mx-auto flex max-w-[1232px] flex-col gap-[18px] px-8 pt-5">
-          <Button type="button" onClick={() => objRouter.back()} style={{ cursor: "pointer" }} className="fade-in h-auto w-fit cursor-pointer bg-transparent p-0 text-sm font-semibold text-[#3f5b6e] underline-offset-4 hover:bg-transparent hover:text-[#24313d] hover:underline">
+          <Button type="button" onClick={() => objRouter.back()} style={{ cursor: "pointer" }} className="fade-in h-auto w-fit cursor-pointer bg-transparent p-0 text-sm font-semibold text-[#2c4556] underline-offset-4 hover:bg-transparent hover:text-[#24313d] hover:underline">
             ← Back to results
           </Button>
 
@@ -249,20 +251,20 @@ export default function ListingPage() {
             <div className="fade-in delay-1 flex flex-1 flex-col gap-[22px]">
               <div className="flex flex-col gap-2">
                 <h1 className="text-[40px] font-semibold leading-[1.08] tracking-[-1px] text-[#24313d]">{objList.title}</h1>
-                <p className="text-[15px] text-[#4a5866]">{strWhere}</p>
+                <p className="text-[15px] text-[#38444f]">{strWhere}</p>
               </div>
 
               <div className="grid gap-3 sm:grid-cols-3">
                 <Card className={strInfoBox}>
-                  <p className="text-xs font-medium text-[#4a5866]">Available</p>
+                  <p className="text-xs font-medium text-[#38444f]">Available</p>
                   <p className="text-[15px] font-semibold">{showDates(objList.availableFrom, objList.availableUntil)}</p>
                 </Card>
                 <Card className={strInfoBox}>
-                  <p className="text-xs font-medium text-[#4a5866]">Rooms</p>
+                  <p className="text-xs font-medium text-[#38444f]">Rooms</p>
                   <p className="text-[15px] font-semibold">{showRooms(objList.bedrooms, objList.bathrooms)}</p>
                 </Card>
                 <Card className={strInfoBox}>
-                  <p className="text-xs font-medium text-[#4a5866]">Type</p>
+                  <p className="text-xs font-medium text-[#38444f]">Type</p>
                   <p className="text-[15px] font-semibold">{showType(objList.listingType)}</p>
                 </Card>
               </div>
@@ -277,7 +279,7 @@ export default function ListingPage() {
               <div className="flex flex-col gap-2">
                 <h2 className="text-xl font-semibold">What&apos;s included</h2>
                 {arrIncluded.length == 0 ? (
-                  <p className="text-[15px] text-[#4a5866]">The host didn&apos;t list this yet.</p>
+                  <p className="text-[15px] text-[#38444f]">The host didn&apos;t list this yet.</p>
                 ) : (
                   <div className="flex flex-wrap gap-2">
                     {arrIncluded.map((strItem) => (
@@ -294,7 +296,7 @@ export default function ListingPage() {
                     <ListingMap arrPins={[{ id: objList.id, price: numRent, lat: objList.latitude, lng: objList.longitude }]} arrPicked={[objList.id]} />
                   </div>
                 ) : (
-                  <p className="text-[15px] text-[#4a5866]">{strWhere}. The exact spot isn&apos;t listed yet.</p>
+                  <p className="text-[15px] text-[#38444f]">{strWhere}. The exact spot isn&apos;t listed yet.</p>
                 )}
               </div>
 
@@ -304,7 +306,7 @@ export default function ListingPage() {
                 </span>
                 <div>
                   <p className="text-[15px] font-semibold">{objList.contactName || "Host"}</p>
-                  <p className="text-[13px] text-[#4a5866]">Listed on {objList.sourceName || "ReletMe"}</p>
+                  <p className="text-[13px] text-[#38444f]">Listed on {objList.sourceName || "ReletMe"}</p>
                 </div>
               </Card>
 
@@ -316,14 +318,14 @@ export default function ListingPage() {
               {objList.monthlyRent != null ? (
                 <p className="flex items-baseline gap-1">
                   <span className="text-[28px] font-semibold">${numRent.toLocaleString()}</span>
-                  <span className="text-[15px] text-[#4a5866]">/mo</span>
+                  <span className="text-[15px] text-[#38444f]">/mo</span>
                 </p>
               ) : (
                 <p className="text-[22px] font-semibold">Price not listed</p>
               )}
 
               {objList.securityDeposit != null && (
-                <p className="-mt-2 text-sm text-[#4a5866]">Deposit {showMoney(objList.securityDeposit)}</p>
+                <p className="-mt-2 text-sm text-[#38444f]">Deposit {showMoney(objList.securityDeposit)}</p>
               )}
 
               <div className="grid grid-cols-2 overflow-hidden rounded-xl border border-[#1c2733]/15">
@@ -353,7 +355,7 @@ export default function ListingPage() {
               {numMonths > 0 && objList.monthlyRent != null && (
                 <div className="flex flex-col gap-2 border-t border-[#1c2733]/10 pt-3.5 text-sm">
                   <p className="flex justify-between">
-                    <span className="text-[#4a5866]">${numRent.toLocaleString()} × {numMonths} {numMonths == 1 ? "month" : "months"}</span>
+                    <span className="text-[#38444f]">${numRent.toLocaleString()} × {numMonths} {numMonths == 1 ? "month" : "months"}</span>
                     <span className="font-semibold">${(numRent * numMonths).toLocaleString()}</span>
                   </p>
                   <p className="flex justify-between font-semibold">
@@ -367,6 +369,7 @@ export default function ListingPage() {
           </div>
         </div>
       )}
+      </main>
     </div>
   );
 }

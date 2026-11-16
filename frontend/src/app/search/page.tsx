@@ -45,10 +45,10 @@ const strPageCss = `
 const numPageSize = 50;
 
 const strSelOn =
-  "h-9 cursor-pointer rounded-full border border-[#3f5b6e] bg-[#3f5b6e] px-3.5 text-[13px] font-semibold text-white outline-none";
+  "h-9 cursor-pointer rounded-full border border-[#3f5b6e] bg-[#3f5b6e] px-3.5 text-[13px] font-semibold text-white outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#2c4556]";
 
 const strSelOff =
-  "h-9 cursor-pointer rounded-full border border-white/70 bg-white/50 px-3.5 text-[13px] font-semibold text-[#1c2733] outline-none hover:bg-white/70";
+  "h-9 cursor-pointer rounded-full border border-white/70 bg-white/50 px-3.5 text-[13px] font-semibold text-[#1c2733] outline-none hover:bg-white/70 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#2c4556]";
 
 function SearchResults() {
   const objRouter = useRouter();
@@ -303,7 +303,7 @@ function SearchResults() {
   return (
     <>
       <div className="fade-in flex flex-col gap-4 pt-6">
-        <SearchBar loading={blnLoading} />
+        <SearchBar loading={blnLoading} city={strCity} moveIn={strMoveIn} moveOut={strMoveOut} />
 
         <div className="flex flex-wrap items-center gap-2.5">
           <select
@@ -359,7 +359,7 @@ function SearchResults() {
             <Button
               type="button"
               onClick={clearFilters}
-              className="h-9 bg-transparent px-2 text-[13px] font-semibold text-[#3f5b6e] hover:bg-transparent"
+              className="h-9 bg-transparent px-2 text-[13px] font-semibold text-[#2c4556] hover:bg-transparent"
             >
               Clear
             </Button>
@@ -367,13 +367,13 @@ function SearchResults() {
         </div>
 
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <span className="text-sm text-[#4a5866]">
+          <h1 aria-live="polite" className="text-sm font-normal text-[#38444f]">
             {blnLoading == true
               ? "Searching..."
               : `${numTotal} ${numTotal == 1 ? "place" : "places"} · ${strTitle}${strDates}`}
-          </span>
+          </h1>
 
-          <label className="flex items-center gap-2 text-[13px] text-[#4a5866]">
+          <label className="flex items-center gap-2 text-[13px] text-[#38444f]">
             Sort by
             <select
               value={strSort}
@@ -404,7 +404,7 @@ function SearchResults() {
             strErr == "" &&
             arrResults.length == 0 &&
             arrMerge.length == 0 && (
-              <p className="text-[15px] text-[#4a5866]">
+              <p className="text-[15px] text-[#38444f]">
                 No places match that. Try a different city or turn off a filter.
               </p>
             )}
@@ -442,6 +442,7 @@ function SearchResults() {
                     type="checkbox"
                     checked={arrCompare.includes(objList.id)}
                     onChange={() => toggleCompare(objList.id)}
+                    aria-label={`Compare ${objList.title}`}
                     className="h-4 w-4 accent-[#3f5b6e]"
                   />
                   Compare
@@ -472,7 +473,7 @@ function SearchResults() {
                   Merge stay
                 </h2>
 
-                <p className="text-sm text-[#4a5866]">
+                <p className="text-sm text-[#38444f]">
                   These two listings together cover {strMoveIn} to{" "}
                   {strMoveOut}.
                 </p>
@@ -527,13 +528,13 @@ function SearchResults() {
           </div>
 
           {arrResults.length > 0 && arrPins.length == 0 && (
-            <p className="absolute left-14 top-4 z-[1000] rounded-full bg-white/90 px-3.5 py-1.5 text-[13px] font-medium text-[#4a5866]">
+            <p className="absolute left-14 top-4 z-[1000] rounded-full bg-white/90 px-3.5 py-1.5 text-[13px] font-medium text-[#38444f]">
               Map spots aren&apos;t in the listing data yet
             </p>
           )}
 
           {blnApprox == true && (
-            <p className="absolute left-14 top-4 z-[1000] rounded-full bg-white/90 px-3.5 py-1.5 text-[13px] font-medium text-[#4a5866]">
+            <p className="absolute left-14 top-4 z-[1000] rounded-full bg-white/90 px-3.5 py-1.5 text-[13px] font-medium text-[#38444f]">
             </p>
           )}
 
@@ -574,7 +575,7 @@ export default function SearchPage() {
 
       {/* z-[1100] keeps the nav above the map when you scroll */}
       <nav className="sticky top-0 z-[1100] border-b border-white/35 bg-white/25 backdrop-blur-lg">
-        <div className="mx-auto flex h-16 max-w-[1232px] items-center justify-between px-8">
+        <div className="mx-auto flex min-h-16 max-w-[1232px] flex-wrap items-center justify-between gap-x-6 gap-y-2 px-4 py-3 sm:px-8">
           <Link
             href="/"
             className="text-[18px] font-bold tracking-tight"
@@ -582,7 +583,7 @@ export default function SearchPage() {
             AlgoRent
           </Link>
 
-          <div className="flex items-center gap-6 text-[14px] font-medium">
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-[14px] font-medium sm:gap-x-6">
             <Link
               href="/search"
               className="font-semibold"
@@ -603,10 +604,12 @@ export default function SearchPage() {
         </div>
       </nav>
 
+      <main>
+
       <div className="mx-auto max-w-[1232px] px-8">
         <Suspense
           fallback={
-            <p className="pt-6 text-[#4a5866]">
+            <p className="pt-6 text-[#38444f]">
               Loading...
             </p>
           }
@@ -614,6 +617,7 @@ export default function SearchPage() {
           <SearchResults />
         </Suspense>
       </div>
+      </main>
     </div>
   );
 }

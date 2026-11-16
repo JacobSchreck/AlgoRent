@@ -46,7 +46,7 @@ const strCardStyle =
   "reveal flex-row items-start gap-3 rounded-none border-none bg-transparent p-0 text-base text-[#1c2733] shadow-none ring-0";
 
 const strIconStyle =
-  "flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white/60 text-[#3f5b6e]";
+  "flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white/60 text-[#2c4556]";
 
 const strPageCss = `
   .bg-drift {
@@ -132,12 +132,12 @@ export default function Home() {
       <style>{strPageCss}</style>
 
       <nav className="sticky top-0 z-10 border-b border-white/35 bg-white/25 backdrop-blur-lg">
-        <div className="mx-auto flex h-16 max-w-[1232px] items-center justify-between px-8">
+        <div className="mx-auto flex min-h-16 max-w-[1232px] flex-wrap items-center justify-between gap-x-6 gap-y-2 px-4 py-3 sm:px-8">
           <Link href="/" className="text-[18px] font-bold tracking-tight">
             AlgoRent
           </Link>
 
-          <div className="flex items-center gap-6 text-[14px] font-medium">
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-[14px] font-medium sm:gap-x-6">
             <Link href="/search">Search</Link>
             <Link href="/saved">Saved</Link>
             {objUser?.role == "ADMIN" && (
@@ -164,8 +164,10 @@ export default function Home() {
         </div>
       </nav>
 
+      <main>
+
       <section className="mx-auto flex max-w-[1232px] flex-col gap-5 px-8 pb-16 pt-28">
-        <p className="fade-in text-[13px] font-medium uppercase tracking-[2px] text-[#3f5b6e]">
+        <p className="fade-in text-[13px] font-medium uppercase tracking-[2px] text-[#2c4556]">
           Summer sublets
         </p>
 
@@ -175,7 +177,7 @@ export default function Home() {
           your summer internship.
         </h1>
 
-        <p className="fade-in delay-1 max-w-[480px] text-[18px] leading-relaxed text-[#4a5866]">
+        <p className="fade-in delay-1 max-w-[480px] text-[18px] leading-relaxed text-[#38444f]">
           Rooms other students are leaving for the summer, for 1 to 4 months.
         </p>
 
@@ -189,7 +191,7 @@ export default function Home() {
           <span className={strIconStyle}>✓</span>
           <div>
             <p className="text-[15px] font-semibold">Matches your dates</p>
-            <p className="text-sm text-[#4a5866]">
+            <p className="text-sm text-[#38444f]">
               Only places open when you are
             </p>
           </div>
@@ -199,7 +201,7 @@ export default function Home() {
           <span className={strIconStyle}>◎</span>
           <div>
             <p className="text-[15px] font-semibold">Pinned to your office</p>
-            <p className="text-sm text-[#4a5866]">See distance on a map</p>
+            <p className="text-sm text-[#38444f]">See distance on a map</p>
           </div>
         </Card>
 
@@ -209,7 +211,7 @@ export default function Home() {
             <p className="text-[15px] font-semibold">
               Compare side by side
             </p>
-            <p className="text-sm text-[#4a5866]">
+            <p className="text-sm text-[#38444f]">
               Line up your favorites
             </p>
           </div>
@@ -224,7 +226,7 @@ export default function Home() {
 
           <Link
             href="/search"
-            className="text-[15px] font-semibold text-[#3f5b6e]"
+            className="text-[15px] font-semibold text-[#2c4556]"
           >
             See all listings
           </Link>
@@ -252,6 +254,7 @@ export default function Home() {
           ))}
         </div>
       </section>
+      </main>
     </div>
   );
 }

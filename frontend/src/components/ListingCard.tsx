@@ -17,7 +17,7 @@ export default function ListingCard({ id, title, price, dates, distance, thumbna
     return (
       <Link href={`/listings/${id}`} className="reveal">
         <Card className="gap-2.5 overflow-visible rounded-none bg-transparent py-0 text-base text-[#1c2733] shadow-none ring-0">
-          <div className="relative flex h-44 flex-col items-center justify-center gap-2 overflow-hidden rounded-[18px] border border-white/60 bg-gradient-to-br from-[#dfe7f0] to-[#c9d6e4] text-[#3f5b6e]">
+          <div className="relative flex h-44 flex-col items-center justify-center gap-2 overflow-hidden rounded-[18px] border border-white/60 bg-gradient-to-br from-[#dfe7f0] to-[#c9d6e4] text-[#2c4556]">
             <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
               <path d="M3 11l9-7 9 7" />
               <path d="M5 10v10h14V10" />
@@ -26,8 +26,8 @@ export default function ListingCard({ id, title, price, dates, distance, thumbna
             <span className="text-xs font-semibold">Photo on {sourceName || "the original site"}</span>
           </div>
           <p className="line-clamp-2 text-[15px] font-bold">{title}</p>
-          <p className="-mt-1.5 text-sm text-[#4a5866]">Listed on {sourceName || "an external source"}</p>
-          <p className="-mt-1 text-sm font-semibold text-[#3f5b6e]">View listing →</p>
+          <p className="-mt-1.5 text-sm text-[#38444f]">Listed on {sourceName || "an external source"}</p>
+          <p className="-mt-1 text-sm font-semibold text-[#2c4556]">View listing →</p>
         </Card>
       </Link>
     );
@@ -43,9 +43,9 @@ export default function ListingCard({ id, title, price, dates, distance, thumbna
       <Card className="gap-2.5 overflow-visible rounded-none bg-transparent py-0 text-base text-[#1c2733] shadow-none ring-0">
         <div className="relative h-44 overflow-hidden rounded-[18px] border border-white/60 bg-white/50 backdrop-blur-md">
           {thumbnailUrl != null && thumbnailUrl != "" ? (
-            <img src={thumbnailUrl} alt={title} className="h-full w-full object-cover" />
+            <img src={thumbnailUrl} alt="" className="h-full w-full object-cover" />
           ) : (
-            <div className="flex h-full items-center justify-center text-xs text-[#4a5866]">No photo</div>
+            <div className="flex h-full items-center justify-center text-xs text-[#38444f]">No photo</div>
           )}
           <span className="absolute left-3 top-3 rounded-full bg-white/80 px-2.5 py-1 text-xs font-bold text-[#1c2733] backdrop-blur">{distance}</span>
         </div>
@@ -53,7 +53,7 @@ export default function ListingCard({ id, title, price, dates, distance, thumbna
           <p className="line-clamp-2 text-[15px] font-bold">{title}</p>
           <p className="whitespace-nowrap text-[15px] font-extrabold">{strPrice}</p>
         </div>
-        <p className="-mt-1.5 text-sm text-[#4a5866]">{dates}</p>
+        <p className="-mt-1.5 text-sm text-[#38444f]">{dates}</p>
       </Card>
     </Link>
   );

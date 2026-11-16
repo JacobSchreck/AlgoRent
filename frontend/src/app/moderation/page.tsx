@@ -88,9 +88,9 @@ export default function ModerationPage() {
   return (
     <div className={`${objFont.className} min-h-screen bg-[linear-gradient(125deg,#b9cbe0,#c3c9e3,#a8c0d6)] pb-20 text-[#1c2733]`}>
       <nav className="sticky top-0 z-10 border-b border-white/35 bg-white/35 backdrop-blur-lg">
-        <div className="mx-auto flex h-16 max-w-[1100px] items-center justify-between px-8">
+        <div className="mx-auto flex min-h-16 max-w-[1100px] flex-wrap items-center justify-between gap-x-6 gap-y-2 px-4 py-3 sm:px-8">
           <Link href="/" className="text-[18px] font-bold">AlgoRent</Link>
-          <div className="flex items-center gap-5 text-sm font-medium">
+          <div className="flex flex-wrap items-center gap-x-5 gap-y-2 text-sm font-medium">
             <Link href="/search">Search</Link>
             <Link href="/moderation" className="font-bold">Moderation</Link>
           </div>
@@ -100,21 +100,21 @@ export default function ModerationPage() {
       <main className="mx-auto flex max-w-[1100px] flex-col gap-6 px-8 pt-10">
         <div className="flex flex-wrap items-end justify-between gap-4">
           <div>
-            <p className="text-sm font-semibold uppercase tracking-[2px] text-[#3f5b6e]">Trust and safety</p>
+            <p className="text-sm font-semibold uppercase tracking-[2px] text-[#2c4556]">Trust and safety</p>
             <h1 className="mt-1 text-[36px] font-semibold tracking-tight">Moderation queue</h1>
-            <p className="mt-1 text-sm text-[#4a5866]">Review pending listing reports from oldest to newest.</p>
+            <p className="mt-1 text-sm text-[#38444f]">Review pending listing reports from oldest to newest.</p>
           </div>
           <Button type="button" onClick={loadQueue} disabled={blnLoading} className="h-10 rounded-full border border-[#1c2733]/20 bg-white/50 px-5 text-[#1c2733] hover:bg-white/75">Refresh</Button>
         </div>
 
         {strError != "" && <p role="alert" className="rounded-2xl border border-red-200 bg-red-50/90 p-4 text-sm text-red-800">{strError}</p>}
-        {blnLoading && <p className="text-sm text-[#4a5866]">Loading reports...</p>}
+        {blnLoading && <p className="text-sm text-[#38444f]">Loading reports...</p>}
 
         {!blnLoading && strError == "" && arrItems.length == 0 && (
           <Card className="items-center gap-3 rounded-[22px] border border-white/70 bg-white/55 p-10 text-center shadow-none ring-0">
             <Check className="h-9 w-9 text-emerald-700" aria-hidden="true" />
             <h2 className="text-xl font-semibold">Queue cleared</h2>
-            <p className="text-sm text-[#4a5866]">There are no pending listing reports.</p>
+            <p className="text-sm text-[#38444f]">There are no pending listing reports.</p>
           </Card>
         )}
 
@@ -127,10 +127,10 @@ export default function ModerationPage() {
                   <div className="min-w-0">
                     <p className="text-xs font-bold uppercase tracking-wide text-red-700">{showReason(objItem.reason)}</p>
                     <Link href={`/listings/${objItem.listingId}`} className="mt-1 block text-lg font-semibold hover:underline">{objItem.listingTitle}</Link>
-                    <p className="mt-1 text-xs text-[#4a5866]">Reported by {objItem.reporterEmail || "deleted account"} · {new Date(objItem.createdAt).toLocaleString()}</p>
+                    <p className="mt-1 text-xs text-[#38444f]">Reported by {objItem.reporterEmail || "deleted account"} · {new Date(objItem.createdAt).toLocaleString()}</p>
                   </div>
                 </div>
-                <a href={objItem.sourceUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 text-sm font-semibold text-[#3f5b6e]">View on {objItem.sourceName}<ExternalLink aria-hidden="true" className="h-4 w-4" /></a>
+                <a href={objItem.sourceUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 text-sm font-semibold text-[#2c4556]">View on {objItem.sourceName}<ExternalLink aria-hidden="true" className="h-4 w-4" /></a>
               </div>
 
               <p className="rounded-xl bg-white/65 p-4 text-sm leading-relaxed text-[#2e3a46]">{objItem.details || "No additional details were provided."}</p>

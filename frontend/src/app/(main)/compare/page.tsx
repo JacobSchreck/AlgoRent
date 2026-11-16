@@ -29,7 +29,7 @@ const strPageCss = `
   }
 `;
 
-const strRowLbl = "py-3.5 pr-4 text-sm font-medium text-[#4a5866]";
+const strRowLbl = "py-3.5 pr-4 text-sm font-medium text-[#38444f]";
 const strCell = "py-3.5 pr-4 text-[15px]";
 const strBest = "ml-2 rounded-full bg-[#3f5b6e] px-2 py-0.5 text-xs font-semibold text-white";
 const strMissingInput = "h-9 w-full min-w-[120px] rounded-lg border border-[#3f5b6e]/35 bg-white/70 px-2.5 text-sm outline-none focus:border-[#3f5b6e]";
@@ -122,15 +122,15 @@ function CompareTable() {
   }
 
   if (blnLoading == true) {
-    return <p className="pt-10 text-[#4a5866]">Loading...</p>;
+    return <p className="pt-10 text-[#38444f]">Loading...</p>;
   }
 
   if (arrPicked.length == 0) {
     return (
       <div className="flex flex-col gap-3 pt-16">
         <h1 className="text-[30px] font-semibold">Nothing to compare yet</h1>
-        <p className="text-[15px] text-[#4a5866]">Check a few places on the search page, then press Compare.</p>
-        <Link href="/search" className="text-[15px] font-semibold text-[#3f5b6e]">Go to search</Link>
+        <p className="text-[15px] text-[#38444f]">Check a few places on the search page, then press Compare.</p>
+        <Link href="/search" className="text-[15px] font-semibold text-[#2c4556]">Go to search</Link>
       </div>
     );
   }
@@ -155,25 +155,25 @@ function CompareTable() {
     <div className="flex flex-col gap-6 pt-10">
       <div className="fade-in flex items-end justify-between">
         <div className="flex flex-col gap-1.5">
-          <Button type="button" onClick={() => objRouter.back()} className="h-auto w-fit bg-transparent p-0 text-sm font-semibold text-[#3f5b6e] hover:bg-transparent">
+          <Button type="button" onClick={() => objRouter.back()} className="h-auto w-fit bg-transparent p-0 text-sm font-semibold text-[#2c4556] hover:bg-transparent">
             ← Back to results
           </Button>
           <h1 className="text-[36px] font-semibold tracking-[-1px] text-[#24313d]">Compare side by side</h1>
-          <p className="text-sm text-[#4a5866]">Missing values are temporary notes for this comparison and are not saved to the listing.</p>
+          <p className="text-sm text-[#38444f]">Missing values are temporary notes for this comparison and are not saved to the listing.</p>
         </div>
-        {strForDates != "" && <p className="text-sm text-[#4a5866]">{strForDates}</p>}
+        {strForDates != "" && <p className="text-sm text-[#38444f]">{strForDates}</p>}
       </div>
 
       <Card className="fade-in overflow-x-auto rounded-[22px] border border-white/70 bg-white/55 p-6 text-base text-[#1c2733] shadow-none ring-0 backdrop-blur-xl">
         <table className="w-full min-w-[640px] border-collapse text-left">
           <thead>
             <tr>
-              <th className="w-[170px]"></th>
+              <th className="w-[170px]"><span className="sr-only">Detail</span></th>
               {arrPicked.map((objList) => (
                 <th key={objList.id} className="pb-4 pr-4 align-top">
-                  <div className="mb-3 flex h-32 items-center justify-center overflow-hidden rounded-2xl border border-white/60 bg-white/50 text-xs font-normal text-[#4a5866]">
+                  <div className="mb-3 flex h-32 items-center justify-center overflow-hidden rounded-2xl border border-white/60 bg-white/50 text-xs font-normal text-[#38444f]">
                     {objList.imageUrls != null && objList.imageUrls.length > 0 ? (
-                      <img src={objList.imageUrls[0]} alt={objList.title} className="h-full w-full object-cover" />
+                      <img src={objList.imageUrls[0]} alt="" className="h-full w-full object-cover" />
                     ) : (
                       "No photo yet"
                     )}
@@ -246,7 +246,7 @@ function CompareTable() {
                     </Button>
                     {objList.sourceType == "LINK_ONLY" && <a href={objList.sourceUrl} target="_blank" rel="noopener noreferrer" className="flex h-10 items-center rounded-full bg-[#3f5b6e] px-4 text-sm font-semibold text-white hover:bg-[#34495a]">Open source</a>}
                     <Button type="button" onClick={() => objRouter.push(`/saved?note=${objList.id}`)} className="h-10 rounded-full bg-[#3f5b6e] px-4 text-sm font-semibold text-white hover:bg-[#34495a]">Note host message</Button>
-                    <Button type="button" onClick={() => removeOne(objList.id)} className="h-10 rounded-full bg-transparent px-2 text-sm font-semibold text-[#4a5866] hover:bg-transparent hover:text-[#1c2733]">
+                    <Button type="button" onClick={() => removeOne(objList.id)} className="h-10 rounded-full bg-transparent px-2 text-sm font-semibold text-[#38444f] hover:bg-transparent hover:text-[#1c2733]">
                       Remove
                     </Button>
                   </div>
@@ -266,9 +266,9 @@ export default function ComparePage() {
       <style>{strPageCss}</style>
 
       <nav className="sticky top-0 z-[1100] border-b border-white/35 bg-white/25 backdrop-blur-lg">
-        <div className="mx-auto flex h-16 max-w-[1232px] items-center justify-between px-8">
+        <div className="mx-auto flex min-h-16 max-w-[1232px] flex-wrap items-center justify-between gap-x-6 gap-y-2 px-4 py-3 sm:px-8">
           <Link href="/" className="text-[18px] font-bold tracking-tight">AlgoRent</Link>
-          <div className="flex items-center gap-6 text-[14px] font-medium">
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-[14px] font-medium sm:gap-x-6">
             <Link href="/search">Search</Link>
             <Link href="/saved">Saved</Link>
             <AuthAccountLinks />
@@ -276,12 +276,15 @@ export default function ComparePage() {
         </div>
       </nav>
 
+      <main>
+
       <div className="mx-auto max-w-[1232px] px-8">
         {/* useSearchParams needs Suspense around it in Next.js */}
-        <Suspense fallback={<p className="pt-10 text-[#4a5866]">Loading...</p>}>
+        <Suspense fallback={<p className="pt-10 text-[#38444f]">Loading...</p>}>
           <CompareTable />
         </Suspense>
       </div>
+      </main>
     </div>
   );
 }

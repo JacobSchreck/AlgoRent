@@ -185,13 +185,15 @@ export default function LoginPage() {
         <Link href="/" className="text-[18px] font-extrabold tracking-tight">AlgoRent</Link>
       </nav>
 
+      <main className="flex flex-1 flex-col">
+
       <div className="flex flex-1 items-center justify-center px-4 py-10">
         <Card className="fade-in w-full max-w-[400px] gap-0 rounded-[18px] border border-white/80 bg-white/80 p-9 text-base text-[#1c2733] shadow-[0_10px_30px_rgba(63,91,110,0.15)] ring-0 backdrop-blur-xl">
           <form onSubmit={handleSubmit} className="flex flex-col gap-[18px]">
 
             <div>
               <h1 className="text-[26px] font-extrabold">{strHeading}</h1>
-              {strSubText != "" && <p className="mt-1 text-sm text-[#4a5866]">{strSubText}</p>}
+              {strSubText != "" && <p className="mt-1 text-sm text-[#38444f]">{strSubText}</p>}
             </div>
 
             {blnSignUp == true && blnVerifying == false && (
@@ -218,7 +220,7 @@ export default function LoginPage() {
             {blnVerifying == false && (
               <div className="flex flex-col gap-1.5">
                 <Label htmlFor="password" className={strLblStyle}>Password</Label>
-                <div className="flex h-[46px] items-center rounded-[10px] border border-[#d1d5db] bg-white pl-3.5 pr-1.5">
+                <div className="flex h-[46px] items-center rounded-[10px] border border-[#d1d5db] bg-white pl-3.5 pr-1.5 focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-[#2c4556]">
                   <Input id="password" type={blnShowPass == true ? "text" : "password"} value={strPass} onChange={(evt) => setStrPass(evt.target.value)} className="h-full flex-1 border-none bg-transparent px-0 text-[15px] md:text-[15px] focus-visible:ring-0" required />
                   <Button type="button" onClick={() => setBlnShowPass(!blnShowPass)} className="h-[34px] rounded-lg bg-[#eef1f4] px-3 text-[13px] font-bold text-[#1c2733] hover:bg-[#e2e7ec]">
                     {blnShowPass == true ? "Hide" : "Show"}
@@ -228,7 +230,7 @@ export default function LoginPage() {
             )}
 
             {strMsg != "" && (
-              <p className={blnErr == true ? "text-sm text-red-600" : "text-sm text-[#3f5b6e]"}>{strMsg}</p>
+              <p className={blnErr == true ? "text-sm text-red-600" : "text-sm text-[#2c4556]"}>{strMsg}</p>
             )}
 
             <Button type="submit" disabled={blnLoading} className="h-12 rounded-[10px] bg-[#3f5b6e] text-[15px] font-bold text-white hover:bg-[#34495a]">
@@ -240,21 +242,22 @@ export default function LoginPage() {
                 Resend code
               </Button>
             ) : (
-              <p className="text-center text-sm text-[#4a5866]">
+              <p className="text-center text-sm text-[#38444f]">
                 {strSwitchText}{" "}
-                <Button type="button" onClick={changeMode} className="h-auto bg-transparent p-0 text-sm font-bold text-[#3f5b6e] hover:bg-transparent">
+                <Button type="button" onClick={changeMode} className="h-auto bg-transparent p-0 text-sm font-bold text-[#2c4556] hover:bg-transparent">
                   {strSwitchLink}
                 </Button>
               </p>
             )}
 
-            <p className="text-center text-sm text-[#4a5866]">
+            <p className="text-center text-sm text-[#38444f]">
               Just looking? <Link href="/search" className="font-bold text-[#1c2733]">Browse without an account</Link>
             </p>
 
           </form>
         </Card>
       </div>
+      </main>
     </div>
   );
 }
