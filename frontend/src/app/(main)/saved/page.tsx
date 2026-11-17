@@ -53,7 +53,7 @@ export default function SavedPage() {
   // Saved places are private to a signed-in browser session. A note query opens the
   // requested listing in the Messaged host column after authentication succeeds.
   useEffect(() => {
-    async function loadSaved() {
+    async function loadPage() {
       try {
         const objAuthRes = await fetch(`${strApiUrl}/api/auth/me`, { credentials: "include" });
         if (!objAuthRes.ok) {
@@ -115,7 +115,7 @@ export default function SavedPage() {
       setArrDetails(arrFound);
       setBlnLoading(false);
     }
-    loadSaved();
+    loadPage();
   }, [objRouter]);
 
   async function saveOne(objItem: SavedItem | undefined) {
@@ -220,7 +220,7 @@ export default function SavedPage() {
         {blnAuthorized == false && (
           <div className="mx-auto flex max-w-[640px] flex-col gap-3 px-8 pt-16">
             <p role="alert" className="rounded-xl bg-red-50 p-4 text-sm text-red-800">{strError}</p>
-            <Link href="/login?next=/saved" className="text-sm font-semibold text-[#3f5b6e]">Go to sign in</Link>
+            <Link href="/login?next=/saved" className="text-sm font-semibold text-[#2c4556]">Go to sign in</Link>
           </div>
         )}
       </div>
@@ -232,9 +232,9 @@ export default function SavedPage() {
       <style>{strPageCss}</style>
 
       <nav className="sticky top-0 z-[1100] border-b border-white/35 bg-white/25 backdrop-blur-lg">
-        <div className="mx-auto flex h-16 max-w-[1232px] items-center justify-between px-8">
+        <div className="mx-auto flex min-h-16 max-w-[1232px] flex-wrap items-center justify-between gap-x-6 gap-y-2 px-4 py-3 sm:px-8">
           <Link href="/" className="text-[18px] font-bold tracking-tight">AlgoRent</Link>
-          <div className="flex items-center gap-6 text-[14px] font-medium">
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-[14px] font-medium sm:gap-x-6">
             <Link href="/search">Search</Link>
             <Link href="/saved" className="font-semibold">Saved</Link>
             <AuthAccountLinks />
@@ -242,11 +242,13 @@ export default function SavedPage() {
         </div>
       </nav>
 
+      <main>
+
       <div className="mx-auto max-w-[1232px] px-8 pt-10">
         <div className="fade-in mb-6 flex items-end justify-between">
           <div>
             <h1 className="text-[36px] font-semibold tracking-[-1px] text-[#24313d]">Saved places</h1>
-            <p className="mt-1 text-[15px] text-[#4a5866]">Keep track of where you are with each place.</p>
+            <p className="mt-1 text-[15px] text-[#38444f]">Keep track of where you are with each place.</p>
           </div>
           {arrRows.length >= 2 && (
             <Button type="button" onClick={() => objRouter.push(`/compare?ids=${arrRows.map((objRow) => objRow.objList.id).join(",")}`)} className="h-11 rounded-full bg-[#3f5b6e] px-6 text-sm font-semibold text-white hover:bg-[#34495a]">
@@ -255,13 +257,13 @@ export default function SavedPage() {
           )}
         </div>
 
-        {blnLoading == true && <p className="text-[#4a5866]">Loading...</p>}
+        {blnLoading == true && <p className="text-[#38444f]">Loading...</p>}
         {strError != "" && <p role="alert" className="rounded-xl bg-red-50 p-4 text-sm text-red-800">{strError}</p>}
 
         {blnLoading == false && strError == "" && arrRows.length == 0 && (
           <div className="fade-in flex flex-col gap-2 pt-6">
-            <p className="text-[15px] text-[#4a5866]">Nothing saved yet. Press Save on any listing and it shows up here.</p>
-            <Link href="/search" className="text-[15px] font-semibold text-[#3f5b6e]">Find places</Link>
+            <p className="text-[15px] text-[#38444f]">Nothing saved yet. Press Save on any listing and it shows up here.</p>
+            <Link href="/search" className="text-[15px] font-semibold text-[#2c4556]">Find places</Link>
           </div>
         )}
 
@@ -270,7 +272,7 @@ export default function SavedPage() {
             {arrStatuses.map((strCol) => (
               <div key={strCol} className="flex flex-col gap-3 rounded-[22px] border border-white/60 bg-white/30 p-4">
                 <p className="text-sm font-semibold">
-                  {strCol} <span className="font-normal text-[#4a5866]">· {arrRows.filter((objRow) => objRow.objItem.status == strCol).length}</span>
+                  {strCol} <span className="font-normal text-[#38444f]">· {arrRows.filter((objRow) => objRow.objItem.status == strCol).length}</span>
                 </p>
 
                 {arrRows.filter((objRow) => objRow.objItem.status == strCol).map((objRow) => (
@@ -280,7 +282,7 @@ export default function SavedPage() {
                     )}
                     <div className="flex flex-col gap-2 px-3.5 pb-3.5 pt-1.5">
                       <Link href={`/listings/${objRow.objList.id}`} className="line-clamp-2 text-[15px] font-semibold">{objRow.objList.title}</Link>
-                      <p className="text-[13px] text-[#4a5866]">
+                      <p className="text-[13px] text-[#38444f]">
                         {objRow.objList.monthlyRent == null ? "Price not listed" : `${showMoney(objRow.objList.monthlyRent)}/mo`} · {showDates(objRow.objList.availableFrom, objRow.objList.availableUntil)}
                       </p>
                       <div className="flex items-center justify-between gap-2 pt-1">
@@ -289,13 +291,13 @@ export default function SavedPage() {
                             <option key={strOpt} value={strOpt}>{strOpt}</option>
                           ))}
                         </select>
-                        <Button type="button" onClick={() => removeOne(objRow.objList.id)} className="h-9 bg-transparent px-2 text-[13px] font-medium text-[#4a5866] hover:bg-transparent hover:text-[#1c2733]">
+                        <Button type="button" onClick={() => removeOne(objRow.objList.id)} className="h-9 bg-transparent px-2 text-[13px] font-medium text-[#38444f] hover:bg-transparent hover:text-[#1c2733]">
                           Remove
                         </Button>
                       </div>
                       <div className="flex items-center justify-between pt-1">
-                        <p className="text-xs font-semibold text-[#4a5866]">Notes</p>
-                        <Button type="button" onClick={() => addNote(objRow.objList.id)} aria-label={`Add another note for ${objRow.objList.title}`} title="Add another note" className="h-7 w-7 rounded-full border border-[#1c2733]/15 bg-white/70 p-0 text-[#3f5b6e] hover:bg-white">
+                        <p className="text-xs font-semibold text-[#38444f]">Notes</p>
+                        <Button type="button" onClick={() => addNote(objRow.objList.id)} aria-label={`Add another note for ${objRow.objList.title}`} title="Add another note" className="h-7 w-7 rounded-full border border-[#1c2733]/15 bg-white/70 p-0 text-[#2c4556] hover:bg-white">
                           <Plus aria-hidden="true" className="h-3.5 w-3.5" />
                         </Button>
                       </div>
@@ -333,7 +335,7 @@ export default function SavedPage() {
                                     onClick={() => setNoteExpanded(strKey, !blnExpanded)}
                                     aria-label={blnExpanded ? "Collapse note to one line" : "Expand full note"}
                                     title={blnExpanded ? "Collapse note" : "Expand note"}
-                                    className="h-8 w-8 rounded-full bg-transparent p-0 text-[#4a5866] hover:bg-slate-100">
+                                    className="h-8 w-8 rounded-full bg-transparent p-0 text-[#38444f] hover:bg-slate-100">
                                     {blnExpanded ? <ChevronUp aria-hidden="true" /> : <ChevronDown aria-hidden="true" />}
                                   </Button>
                                 )}
@@ -353,7 +355,7 @@ export default function SavedPage() {
                           );
                         })}
                       </div>
-                      <p className="text-[11px] text-[#4a5866]">Saved automatically</p>
+                      <p className="text-[11px] text-[#38444f]">Saved automatically</p>
                     </div>
                   </Card>
                 ))}
@@ -362,6 +364,7 @@ export default function SavedPage() {
           </div>
         )}
       </div>
+      </main>
     </div>
   );
 }

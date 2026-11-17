@@ -88,9 +88,9 @@ export default function ReportListingDialog({ listingId, listingTitle }: ReportL
             <div className="flex items-start justify-between gap-4">
               <div>
                 <h2 id="report-listing-title" className="text-xl font-semibold">Report this listing</h2>
-                <p className="mt-1 line-clamp-2 text-sm text-[#4a5866]">{listingTitle}</p>
+                <p className="mt-1 line-clamp-2 text-sm text-[#38444f]">{listingTitle}</p>
               </div>
-              <Button type="button" onClick={() => setBlnOpen(false)} aria-label="Close report dialog" className="h-9 w-9 rounded-full bg-transparent p-0 text-[#4a5866] hover:bg-slate-100">
+              <Button type="button" onClick={() => setBlnOpen(false)} aria-label="Close report dialog" className="h-9 w-9 rounded-full bg-transparent p-0 text-[#38444f] hover:bg-slate-100">
                 <X aria-hidden="true" />
               </Button>
             </div>
@@ -111,9 +111,9 @@ export default function ReportListingDialog({ listingId, listingTitle }: ReportL
                 </label>
 
                 <label className="flex flex-col gap-1.5 text-sm font-semibold">
-                  Details <span className="font-normal text-[#4a5866]">(optional)</span>
+                  Details <span className="font-normal text-[#38444f]">(optional)</span>
                   <textarea value={strDetails} onChange={(evt) => setStrDetails(evt.target.value)} maxLength={1000} rows={5} placeholder="Tell the moderation team what you noticed." className="resize-none rounded-xl border border-[#1c2733]/20 bg-white p-3 text-sm font-normal outline-none focus:border-[#3f5b6e]" />
-                  <span className="text-right text-xs font-normal text-[#4a5866]">{strDetails.length}/1000</span>
+                  <span className="text-right text-xs font-normal text-[#38444f]">{strDetails.length}/1000</span>
                 </label>
 
                 {strMessage != "" && <p role="alert" className="rounded-xl bg-red-50 p-3 text-sm text-red-800">{strMessage}</p>}

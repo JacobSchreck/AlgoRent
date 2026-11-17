@@ -8,13 +8,17 @@ import { Label } from "./ui/label";
 
 type Props = {
   loading?: boolean;
+  // the search that's on screen, so the boxes show it instead of starting empty
+  city?: string;
+  moveIn?: string;
+  moveOut?: string;
 };
 
-export default function SearchBar({ loading = false }: Props) {
+export default function SearchBar({ loading = false, city = "", moveIn = "", moveOut = "" }: Props) {
   const objRouter = useRouter();
-  const [strCity, setStrCity] = useState("");
-  const [strMoveIn, setStrMoveIn] = useState("");
-  const [strMoveOut, setStrMoveOut] = useState("");
+  const [strCity, setStrCity] = useState(city);
+  const [strMoveIn, setStrMoveIn] = useState(moveIn);
+  const [strMoveOut, setStrMoveOut] = useState(moveOut);
 
   function handleSrch(evt: React.SyntheticEvent) {
     evt.preventDefault();
@@ -30,8 +34,8 @@ export default function SearchBar({ loading = false }: Props) {
   }
 
   const strInStyle =
-    "h-auto rounded-none border-none bg-transparent p-0 text-base text-[#1c2733] md:text-base placeholder:text-[#6b7885] focus-visible:ring-0";
-  const strLblStyle = "text-xs font-medium text-[#4a5866]";
+    "h-auto rounded-none border-none bg-transparent p-0 text-base text-[#1c2733] md:text-base placeholder:text-[#4a5866] focus-visible:ring-0 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#2c4556]";
+  const strLblStyle = "text-xs font-medium text-[#38444f]";
 
   return (
     <form

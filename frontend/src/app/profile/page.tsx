@@ -170,9 +170,9 @@ export default function ProfilePage() {
       <style>{strPageCss}</style>
 
       <nav className="sticky top-0 z-[1100] border-b border-white/35 bg-white/25 backdrop-blur-lg">
-        <div className="mx-auto flex h-16 max-w-[1232px] items-center justify-between px-8">
+        <div className="mx-auto flex min-h-16 max-w-[1232px] flex-wrap items-center justify-between gap-x-6 gap-y-2 px-4 py-3 sm:px-8">
           <Link href="/" className="text-[18px] font-bold tracking-tight">AlgoRent</Link>
-          <div className="flex items-center gap-6 text-[14px] font-medium">
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-[14px] font-medium sm:gap-x-6">
             <Link href="/search">Search</Link>
             <Link href="/saved">Saved</Link>
             <AuthAccountLinks />
@@ -180,13 +180,15 @@ export default function ProfilePage() {
         </div>
       </nav>
 
+      <main>
+
       <div className="mx-auto flex max-w-[1232px] justify-center px-8 py-14">
-        {blnLoading == true && <p className="text-[#4a5866]">Loading...</p>}
+        {blnLoading == true && <p className="text-[#38444f]">Loading...</p>}
 
         {blnLoading == false && objUser == null && (
           <Card className="fade-in w-full max-w-[520px] rounded-[22px] border border-white/60 bg-white/45 p-8 text-center shadow-none backdrop-blur-lg">
             <h1 className="text-[24px] font-bold">You&apos;re not signed in</h1>
-            <p className="mt-2 text-[15px] text-[#4a5866]">Sign in to see your profile.</p>
+            <p className="mt-2 text-[15px] text-[#38444f]">Sign in to see your profile.</p>
             <Button type="button" onClick={() => objRouter.push("/login")} className="mx-auto mt-6 h-11 rounded-full bg-[#3f5b6e] px-6 text-[14px] font-bold text-white hover:bg-[#34495a]">
               Sign in
             </Button>
@@ -201,7 +203,7 @@ export default function ProfilePage() {
               <div className="flex h-16 w-16 items-center justify-center rounded-full bg-[#3f5b6e] text-[22px] font-bold text-white">{strInitials}</div>
               <div>
                 <h1 className="text-[24px] font-bold leading-tight">{strName}</h1>
-                <p className="text-[14px] text-[#4a5866]">{objUser.email}</p>
+                <p className="text-[14px] text-[#38444f]">{objUser.email}</p>
               </div>
             </div>
 
@@ -210,7 +212,7 @@ export default function ProfilePage() {
             {/* your spot */}
             <form onSubmit={saveSpot}>
               <Label htmlFor="spot" className="text-[16px] font-bold text-[#1c2733]">Your spot</Label>
-              <p className="mb-3 mt-1 text-[13px] text-[#4a5866]">Where you&apos;ll work or study. It shows up as a pin on the map.</p>
+              <p className="mb-3 mt-1 text-[13px] text-[#38444f]">Where you&apos;ll work or study. It shows up as a pin on the map.</p>
               <div className="flex flex-wrap gap-2">
                 <Input id="spot" value={strAddress} onChange={(evt) => setStrAddress(evt.target.value)} placeholder="1600 SW Archer Rd, Gainesville, FL" className="h-11 min-w-[200px] flex-1 rounded-full border-white/90 bg-white/80 px-4 text-[14px]" />
                 <Button type="submit" disabled={blnFinding} className="h-11 rounded-full bg-[#3f5b6e] px-6 text-[14px] font-bold text-white hover:bg-[#34495a]">
@@ -218,7 +220,7 @@ export default function ProfilePage() {
                 </Button>
               </div>
               {strShowMsg != "" && (
-                <p className="mt-3 text-[13px] font-medium text-[#3f5b6e]">
+                <p className="mt-3 text-[13px] font-medium text-[#2c4556]">
                   {strShowMsg}
                   {objSpot != null && (
                     <button type="button" onClick={removeSpot} className="ml-2 cursor-pointer underline">Remove</button>
@@ -237,7 +239,7 @@ export default function ProfilePage() {
               <Button type="button" onClick={() => objRouter.push("/saved")} className="h-11 rounded-full border border-white/80 bg-white/60 px-6 text-[14px] font-bold text-[#1c2733] hover:bg-white/80">
                 View saved
               </Button>
-              <Button type="button" onClick={signOut} className="h-11 rounded-full bg-transparent px-4 text-[14px] font-semibold text-[#3f5b6e] hover:bg-transparent hover:underline">
+              <Button type="button" onClick={signOut} className="h-11 rounded-full bg-transparent px-4 text-[14px] font-semibold text-[#2c4556] hover:bg-transparent hover:underline">
                 Sign out
               </Button>
             </div>
@@ -245,6 +247,7 @@ export default function ProfilePage() {
           </Card>
         )}
       </div>
+      </main>
     </div>
   );
 }
