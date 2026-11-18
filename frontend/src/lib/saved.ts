@@ -6,11 +6,10 @@ export type SavedItem = {
   notes?: string[];
 };
 
-// Saved listings used to live only in the browser under this key. They now live in the
-// user's account (/api/saved). Anything still in the browser is moved over once.
+// old browser-only saved list, moved into the account once
 const strOldKey = "algorentSaved";
 
-// Returns the signed-in user's saved listings, or null if they are not signed in.
+// null if not signed in
 export async function loadSaved(): Promise<SavedItem[] | null> {
   const objRes = await fetch(`${strApiUrl}/api/saved`, { credentials: "include" });
   if (objRes.status == 401) {
@@ -37,7 +36,6 @@ export async function loadSaved(): Promise<SavedItem[] | null> {
   return arrItems;
 }
 
-// Saves a listing, or replaces its status and notes. Empty notes are skipped by the server.
 export async function saveItem(objItem: SavedItem): Promise<boolean> {
   try {
     const objRes = await fetch(`${strApiUrl}/api/saved/${objItem.id}`, {

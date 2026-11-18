@@ -8,10 +8,6 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
 
-/**
- * Turns errors into RFC 9457 problem-detail JSON. Spring's built-in handling (inherited here)
- * already covers malformed parameters such as a bad date or a non-numeric price with a 400.
- */
 @RestControllerAdvice
 public class ApiExceptionHandler extends ResponseEntityExceptionHandler {
 

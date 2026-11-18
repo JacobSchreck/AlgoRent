@@ -52,11 +52,8 @@ commands to give the reviewing team.
 
 ## Mac or Linux
 
-`./start-local.sh` does the same as `setup-local.bat` and `start-local.bat`: it starts PostgreSQL, the
-backend and the frontend, and loads the 5,000 demo listings. It needs Docker Desktop (running),
-JDK 21 and Node.js 20 or newer. Press Ctrl+C to stop; `docker compose down` stops the database.
-
-To load test the running app, see [loadtest/README.md](loadtest/README.md).
+Run `./start-local.sh` (same as the two .bat files). Ctrl+C stops it, `docker compose down` stops the database.
+Load test: [loadtest/README.md](loadtest/README.md).
 
 ## Repository layout
 

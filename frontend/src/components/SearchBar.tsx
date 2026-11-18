@@ -8,7 +8,6 @@ import { Label } from "./ui/label";
 
 type Props = {
   loading?: boolean;
-  // the search that's on screen, so the boxes show it instead of starting empty
   city?: string;
   moveIn?: string;
   moveOut?: string;

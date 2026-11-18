@@ -42,10 +42,8 @@ public class AuthController {
 
     private static final Logger log = LoggerFactory.getLogger(AuthController.class);
 
-    // a code stops working after this many wrong guesses
     private static final int MAX_CODE_ATTEMPTS = 5;
 
-    // resend won't send another code until the last one is this old
     private static final int RESEND_COOLDOWN_SECONDS = 60;
 
     private static final String RESEND_MESSAGE =
@@ -174,8 +172,7 @@ public class AuthController {
             );
 
         } catch (MailException e) {
-            // Without the email the user could never verify, and the address would be
-            // stuck as "already used". Remove the account so they can try again later.
+            // remove the account so they can sign up again
             log.error("Could not send the verification email during signup", e);
 
             jdbc.update(
@@ -340,8 +337,7 @@ public class AuthController {
                 .trim()
                 .toLowerCase(Locale.ROOT);
 
-        // Same answer whether or not the account exists, so this can't be used to
-        // find out who has an account.
+        // same answer either way so this can't be used to check who has an account
         List<Integer> userIds = jdbc.queryForList(
                 """
                 SELECT id
@@ -375,7 +371,6 @@ public class AuthController {
         );
 
         if (recentCodes != null && recentCodes > 0) {
-            // a code was sent less than a minute ago; don't flood their inbox
             return ResponseEntity.ok(
                     Map.of("message", RESEND_MESSAGE)
             );
@@ -664,7 +659,7 @@ public class AuthController {
         );
 
         if (!mailEnabled) {
-            // Local development without an email server: print the code instead.
+            // local testing without an email server
             log.warn("Email is turned off (MAIL_ENABLED=false). Verification code for {}: {}", email, code);
             return;
         }

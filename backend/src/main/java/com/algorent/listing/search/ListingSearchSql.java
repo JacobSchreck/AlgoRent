@@ -3,27 +3,6 @@ package com.algorent.listing.search;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
-/**
- * Builds the SQL for a listing search. Pure Java with no Spring dependency, so the generated
- * queries can be checked directly against Postgres.
- *
- * <p>Only fixed SQL fragments are concatenated; every user-supplied value is a named parameter.
- *
- * <p>Matching rules:
- * <ul>
- *   <li>Only ACTIVE listings are returned.</li>
- *   <li>City, state and type filters are case-insensitive exact matches.</li>
- *   <li>For a date range, a listing must be available for the whole stay:
- *       available_from on or before move-in, and available_until on or after move-out.
- *       A missing available_from or available_until counts as open-ended. Scraped listings often
- *       omit dates, and hiding them all would hide much of the supply.</li>
- *   <li>A price or bedroom filter excludes listings where that value is unknown.</li>
- *   <li>With a location (lat/lng), each result gets its great-circle distance in miles
- *       (haversine). A radius keeps only listings within that distance; listings without
- *       coordinates are then excluded, since their distance is unknown. A bounding box on
- *       latitude/longitude narrows the rows first so the index can be used.</li>
- * </ul>
- */
 public final class ListingSearchSql {
 
     private static final String SELECT_COLUMNS = """
@@ -62,7 +41,6 @@ public final class ListingSearchSql {
             JOIN sources s ON s.id = l.source_id
             """;
 
-    /** Haversine distance in miles from (:lat, :lng); NULL when the listing has no coordinates. */
     private static final String DISTANCE_JOIN = """
             CROSS JOIN LATERAL (
                 SELECT CASE
@@ -75,7 +53,6 @@ public final class ListingSearchSql {
             ) geo
             """;
 
-    /** Miles per degree of latitude, rounded down so the bounding box is never too small. */
     private static final double MILES_PER_DEGREE = 68.0;
 
     private final String fromClause;
@@ -99,6 +76,7 @@ public final class ListingSearchSql {
         }
 
         if (criteria.moveIn() != null) {
+            // scraped listings often have no dates, so missing dates count as open
             where.append("  AND (l.available_from IS NULL OR l.available_from <= :moveIn)\n");
             where.append("  AND (l.available_until IS NULL OR l.available_until >= :moveOut)\n");
             params.put("moveIn", criteria.moveIn());
@@ -147,6 +125,7 @@ public final class ListingSearchSql {
                 double cosLat = Math.max(Math.cos(Math.toRadians(criteria.latitude())), 0.01);
                 double lngDelta = radius / (MILES_PER_DEGREE * cosLat);
 
+                // box around the point first so the index gets used
                 where.append("  AND l.latitude BETWEEN :minLat AND :maxLat\n");
                 where.append("  AND l.longitude BETWEEN :minLng AND :maxLng\n");
                 where.append("  AND geo.distance_miles <= :radiusMiles\n");
@@ -174,13 +153,11 @@ public final class ListingSearchSql {
         this.pageParams = Map.copyOf(withPaging);
     }
 
-    /** One page of results, in the requested order. Use with {@link #pageParams()}. */
     public String pageQuery() {
         return SELECT_COLUMNS + distanceColumn + fromClause + whereClause + orderByClause
                 + "LIMIT :limit OFFSET :offset";
     }
 
-    /** Total number of matches across all pages. Use with {@link #countParams()}. */
     public String countQuery() {
         return "SELECT count(*)\n" + fromClause + whereClause;
     }

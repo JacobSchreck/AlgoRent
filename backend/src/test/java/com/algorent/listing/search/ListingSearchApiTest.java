@@ -19,13 +19,6 @@ import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
-/**
- * End-to-end test of GET /api/listings/search against a real Postgres (the same major version as
- * docker-compose.yml), with the Flyway migrations applied. Needs Docker; skipped when Docker is not
- * running. CI always runs it.
- *
- * <p>Fixture listings are described at the top of search-fixtures.sql.
- */
 @SpringBootTest
 @AutoConfigureMockMvc
 @Testcontainers(disabledWithoutDocker = true)
@@ -83,7 +76,7 @@ class ListingSearchApiTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.results[*].id").value(contains(3, 1, 2, 4)));
 
-        // Listing 2 ends Aug 15, so a stay through Aug 20 excludes it.
+        // listing 2 ends aug 15
         mvc.perform(get("/api/listings/search")
                         .param("city", "Gainesville")
                         .param("moveIn", "2027-05-01")

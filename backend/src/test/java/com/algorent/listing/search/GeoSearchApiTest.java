@@ -19,17 +19,11 @@ import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
-/**
- * Location search (lat/lng/radiusMiles, sort=distance) against a real Postgres.
- *
- * <p>Reference point is Century Tower at UF. Fixture distances (search-fixtures.sql):
- * listing 1 ≈ 0.30 mi, 2 ≈ 2.38 mi, 6 ≈ 2.96 mi, 4 ≈ 8.96 mi, 3 has no coordinates,
- * 5 is next door but REMOVED.
- */
 @SpringBootTest
 @AutoConfigureMockMvc
 @Testcontainers(disabledWithoutDocker = true)
 @Sql("/search-fixtures.sql")
+// distances from Century Tower: 1 = 0.30 mi, 2 = 2.38, 6 = 2.96, 4 = 8.96, 3 has no coordinates
 class GeoSearchApiTest {
 
     private static final String UF_LAT = "29.6487";

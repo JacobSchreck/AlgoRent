@@ -50,9 +50,8 @@ export default function SavedPage() {
   const [strError, setStrError] = useState("");
   const [objExpandedNotes, setObjExpandedNotes] = useState<Record<string, boolean>>({});
   const [objLongNotes, setObjLongNotes] = useState<Record<string, boolean>>({});
-  // note typing is saved after a short pause instead of on every key
   const objNoteTimers = useRef<Record<number, ReturnType<typeof setTimeout>>>({});
-  // the latest list, so a delayed note save never sends an older status
+  // latest list so a delayed note save doesn't send an old status
   const objLatest = useRef<SavedItem[]>([]);
   useEffect(() => {
     objLatest.current = arrSaved;

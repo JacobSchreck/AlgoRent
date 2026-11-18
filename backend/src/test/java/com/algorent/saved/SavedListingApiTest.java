@@ -21,10 +21,6 @@ import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
-/**
- * Saved listings API against a real Postgres. Uses the users and listings from
- * search-fixtures.sql: user 1 is a regular user, user 2 is the admin.
- */
 @SpringBootTest
 @AutoConfigureMockMvc
 @Testcontainers(disabledWithoutDocker = true)
@@ -84,7 +80,6 @@ class SavedListingApiTest {
                         .content("{\"status\":\"Interested\",\"notes\":[\"old note\"]}"))
                 .andExpect(status().isOk());
 
-        // The empty note is dropped, like the Saved page does.
         mvc.perform(put("/api/saved/2")
                         .session(user)
                         .contentType(MediaType.APPLICATION_JSON)
@@ -133,7 +128,6 @@ class SavedListingApiTest {
                 .andExpect(jsonPath("$", hasSize(1)))
                 .andExpect(jsonPath("$[0].id").value(7));
 
-        // Removing listing 1 as user 2 must not touch user 1's copy.
         mvc.perform(delete("/api/saved/1").session(sessionFor(2)))
                 .andExpect(status().isNoContent());
         mvc.perform(get("/api/saved").session(sessionFor(1)))
@@ -152,14 +146,12 @@ class SavedListingApiTest {
 
         mvc.perform(delete("/api/saved/1").session(user))
                 .andExpect(status().isNoContent());
-        // Removing something that is not saved is fine too.
         mvc.perform(delete("/api/saved/1").session(user))
                 .andExpect(status().isNoContent());
 
         mvc.perform(get("/api/saved").session(user))
                 .andExpect(jsonPath("$", hasSize(0)));
 
-        // Saving it again starts with no notes.
         mvc.perform(put("/api/saved/1")
                         .session(user)
                         .contentType(MediaType.APPLICATION_JSON)

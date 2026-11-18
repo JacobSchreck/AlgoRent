@@ -1,12 +1,5 @@
 #!/usr/bin/env bash
-# Mac and Linux version of setup-local.bat + start-local.bat.
-# Starts PostgreSQL, the backend and the frontend, and loads the 5,000 demo listings.
-#
-#   ./start-local.sh
-#
-# Needs Docker Desktop (running), JDK 21 and Node.js 20 or newer.
-# Press Ctrl+C to stop the frontend and backend. The database keeps running;
-# stop it with: docker compose down
+# mac version of start-local.bat (needs docker, jdk 21, node 20)
 
 set -e
 cd "$(dirname "$0")"
@@ -25,7 +18,6 @@ fi
 echo "Starting PostgreSQL..."
 docker compose up -d --wait
 
-# Same local values as start-local.bat.
 export DB_HOST=localhost
 export DB_PORT=5433
 export DB_NAME=algorent
@@ -34,7 +26,7 @@ export DB_PASSWORD=algorent
 export SPRING_DATASOURCE_URL="jdbc:postgresql://localhost:5433/algorent?sslmode=disable"
 export CORS_ALLOWED_ORIGINS=http://localhost:3000
 export NEXT_PUBLIC_API_URL=http://localhost:8080
-# No email server locally: sign-up codes are printed in backend/target/backend.log instead.
+# no email server locally, codes go to backend/target/backend.log
 export MAIL_ENABLED=false
 
 if [ ! -d frontend/node_modules ]; then
@@ -48,7 +40,6 @@ mkdir -p backend/target
 BACKEND_PID=$!
 trap 'echo; echo "Stopping the backend..."; kill $BACKEND_PID 2> /dev/null; pkill -f "com.algorent.AlgoRentApplication" 2> /dev/null' EXIT
 
-# The first run downloads the backend's dependencies, so allow a few minutes.
 echo "Waiting for the backend and database migrations..."
 for attempt in $(seq 1 300); do
   if curl -s http://localhost:8080/actuator/health | grep -q '"status":"UP"'; then

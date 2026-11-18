@@ -1,10 +1,4 @@
-# Runs every listing source once. The nightly GitHub Action calls this.
-#
-#   python -m dataPipeline.scheduled            run all sources
-#   python -m dataPipeline.scheduled --dry-run  fetch and check, but don't save
-#
-# If one source breaks, the rest still run. The script exits with 1 if any
-# source failed so GitHub marks the run as failed and emails us.
+# runs every source once (used by the nightly action). --dry-run doesn't save anything
 
 import argparse
 import asyncio
@@ -16,7 +10,6 @@ from dataPipeline.pipeline import (
     run_subleaps_pipeline,
 )
 
-# Add new sites here once they have a pipeline function like ReletMe's.
 SOURCES = {
     "ReletMe": run_reletme_pipeline,
     "SubLeaps": run_subleaps_pipeline,

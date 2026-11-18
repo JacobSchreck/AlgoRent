@@ -16,15 +16,11 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
 
-/**
- * The signed-in user's saved listings, with the status and notes shown on the Saved page.
- * Every endpoint needs a signed-in session, and a user only ever sees their own list.
- */
 @RestController
 @RequestMapping("/api/saved")
 public class SavedListingController {
 
-    // Must match the columns on the Saved page and the check in migration V6.
+    // same as the check in V6
     private static final List<String> STATUSES =
             List.of("Interested", "Messaged host", "Toured", "Applied");
 
@@ -43,7 +39,6 @@ public class SavedListingController {
         return repository.findAll(userId);
     }
 
-    /** Saves the listing, or replaces its status and notes if it is already saved. */
     @PutMapping("/{listingId}")
     public SavedListing save(
             @PathVariable long listingId,
@@ -93,7 +88,6 @@ public class SavedListingController {
         return status;
     }
 
-    // Empty notes are dropped, the same way the Saved page ignores them.
     private List<String> cleanNotes(List<String> values) {
         List<String> notes = new ArrayList<>();
         if (values == null) {

@@ -65,7 +65,6 @@ def required_env(name: str) -> str:
 
 
 def seen_ids(listings, failures) -> list[str]:
-    """Every listing id the source returned, including ones that failed validation."""
     ids = [listing.external_id for listing in listings]
     ids += [failure.external_id for failure in failures if failure.external_id]
     return ids
@@ -110,7 +109,7 @@ async def run_reletme_pipeline(
     if not source_is_enabled(source_id):
         raise RuntimeError("ReletMe source is disabled in the sources table")
     persisted = upsert_listings(source_id, listings)
-    # A fixture is only a sample, so only a full live fetch can tell us a listing is gone.
+    # only a full live fetch can tell us a listing is gone
     removed = 0 if fixture is not None else mark_missing_listings_removed(
         source_id, seen_ids(listings, failures))
 
@@ -146,7 +145,7 @@ async def run_subleaps_pipeline(
     if not source_is_enabled(source_id):
         raise RuntimeError("SubLeaps source is disabled in the sources table")
     persisted = upsert_listings(source_id, listings)
-    # A fixture is only a sample, so only a full live fetch can tell us a listing is gone.
+    # only a full live fetch can tell us a listing is gone
     removed = 0 if fixture is not None else mark_missing_listings_removed(
         source_id, seen_ids(listings, failures))
     return PipelineResult(
@@ -182,7 +181,7 @@ async def run_rotatingroom_pipeline(
     if not source_is_enabled(source_id):
         raise RuntimeError("RotatingRoom source is disabled in the sources table")
     persisted = upsert_listings(source_id, listings)
-    # A fixture is only a sample, so only a full live fetch can tell us a listing is gone.
+    # only a full live fetch can tell us a listing is gone
     removed = 0 if fixture is not None else mark_missing_listings_removed(
         source_id, seen_ids(listings, failures))
     return PipelineResult(
