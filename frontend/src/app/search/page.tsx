@@ -67,6 +67,8 @@ function SearchResults() {
 
   const [arrResults, setArrResults] = useState<ListingSummary[]>([]);
   const [arrMerge, setArrMerge] = useState<ListingSummary[]>([]);
+  const [arrMergeSaved, setArrMergeSaved] = useState<string[]>([]);
+  const [strMergeError, setStrMergeError] = useState("");
   const [blnLoading, setBlnLoading] = useState(true);
   const [numTotal, setNumTotal] = useState(0);
   const [numNextPage, setNumNextPage] = useState(1);
@@ -466,53 +468,60 @@ function SearchResults() {
             </div>
           )}
 
-          {arrMerge.length == 2 && (
+          {arrMerge.length >= 2 && (
             <div className="col-span-full mt-5 border-t border-white/50 pt-5">
-              <div className="mb-4">
-                <h2 className="text-lg font-bold">
-                  Merge stay
-                </h2>
-
-                <p className="text-sm text-[#38444f]">
-                  These two listings together cover {strMoveIn} to{" "}
-                  {strMoveOut}.
-                </p>
+              <h2 className="mb-4 text-lg font-bold">Merge Stay</h2>
+              {strMergeError && <p role="alert" className="mb-3 text-sm text-red-700">{strMergeError}</p>}
+              <div className="flex flex-col gap-4">
+                {Array.from({ length: Math.floor(arrMerge.length / 2) }, (_, numIndex) => {
+                  const arrPair = arrMerge.slice(numIndex * 2, numIndex * 2 + 2);
+                  const strKey = `${arrPair[0].id}-${arrPair[1].id}`;
+                  return (
+                    <div key={strKey} className="rounded-2xl border border-white/70 bg-white/55 p-3">
+                      <div className="grid gap-3 sm:grid-cols-2">
+                        {arrPair.map((objList) => (
+                          <ListingCard
+                            key={objList.id}
+                            id={objList.id}
+                            title={objList.title}
+                            price={objList.monthlyRent == null ? null : Number(objList.monthlyRent)}
+                            dates={showDates(objList.availableFrom, objList.availableUntil)}
+                            distance={showPlace(objList.city, objList.state)}
+                            thumbnailUrl={objList.thumbnailUrl}
+                            sourceName={objList.sourceName}
+                            sourceType={objList.sourceType}
+                          />
+                        ))}
+                      </div>
+                      <div className="mt-3 flex justify-end">
+                        <Button
+                          type="button"
+                          disabled={arrMergeSaved.includes(strKey)}
+                          onClick={async () => {
+                            setStrMergeError("");
+                            try {
+                              const objRes = await fetch(`${strApiUrl}/api/saved/merges`, {
+                                method: "POST", credentials: "include",
+                                headers: { "Content-Type": "application/json" },
+                                body: JSON.stringify({ firstId: arrPair[0].id, secondId: arrPair[1].id, moveIn: strMoveIn, moveOut: strMoveOut }),
+                              });
+                              if (objRes.status === 401) {
+                                objRouter.push(`/login?next=${encodeURIComponent(window.location.pathname + window.location.search)}`);
+                              } else if (!objRes.ok) {
+                                setStrMergeError("Couldn't save Merge Stay.");
+                              } else {
+                                setArrMergeSaved((arrCurrent) => [...arrCurrent, strKey]);
+                              }
+                            } catch { setStrMergeError("Couldn't save Merge Stay."); }
+                          }}
+                          className="h-9 rounded-full bg-[#3f5b6e] px-4 text-[13px] font-semibold text-white hover:bg-[#34495a] disabled:opacity-50"
+                        >{arrMergeSaved.includes(strKey) ? "Saved" : "Save Merge Stay"}</Button>
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
-
-              <div className="grid gap-5 sm:grid-cols-2">
-                {arrMerge.map((objList) => (
-                  <ListingCard
-                    key={objList.id}
-                    id={objList.id}
-                    title={objList.title}
-                    price={
-                      objList.monthlyRent == null
-                        ? null
-                        : Number(objList.monthlyRent)
-                    }
-                    dates={
-                      objList.availableFrom != null &&
-                      objList.availableUntil != null
-                        ? showDates(
-                            objList.availableFrom,
-                            objList.availableUntil,
-                          )
-                        : "See original listing for dates"
-                    }
-                    distance={
-                      objList.distanceMiles != null
-                        ? `${objList.distanceMiles.toFixed(1)} mi away`
-                        : showPlace(
-                            objList.city,
-                            objList.state,
-                          )
-                    }
-                    thumbnailUrl={objList.thumbnailUrl}
-                    sourceName={objList.sourceName}
-                    sourceType={objList.sourceType}
-                  />
-                ))}
-              </div>
+              <p className="mt-3 text-xs text-[#38444f]">Apply to each listing separately.</p>
             </div>
           )}
         </div>
@@ -589,10 +598,6 @@ export default function SearchPage() {
               className="font-semibold"
             >
               Search
-            </Link>
-
-            <Link href="/compare">
-              Compare
             </Link>
 
             <Link href="/saved">

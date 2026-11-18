@@ -64,7 +64,7 @@ public class ListingSearchRepository {
                 AND b.available_from <= a.available_until + INTERVAL '1 day'
                 AND b.available_until >= :moveOut
                 ORDER BY a.available_until DESC
-                LIMIT 1
+                LIMIT 5
                 """;
 
         List<long[]> pair = jdbc.query(
@@ -77,13 +77,6 @@ public class ListingSearchRepository {
                         rs.getLong("first_id"),
                         rs.getLong("second_id")
                 });
-
-        if (pair.isEmpty()) {
-            return List.of();
-        }
-
-        long firstId = pair.get(0)[0];
-        long secondId = pair.get(0)[1];
 
         String detailSql = """
                 SELECT
@@ -126,12 +119,12 @@ public class ListingSearchRepository {
                     END
                 """;
 
-        return jdbc.query(
-                detailSql,
-                Map.of(
-                        "firstId", firstId,
-                        "secondId", secondId),
-                ROW_MAPPER);
+        List<ListingSummary> results = new java.util.ArrayList<>();
+        for (long[] ids : pair) {
+            results.addAll(jdbc.query(detailSql,
+                    Map.of("firstId", ids[0], "secondId", ids[1]), ROW_MAPPER));
+        }
+        return results;
     }
     
     private static ListingSummary mapRow(ResultSet rs, int rowNum) throws SQLException {
