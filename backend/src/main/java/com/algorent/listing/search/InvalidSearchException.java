@@ -2,10 +2,6 @@ package com.algorent.listing.search;
 
 import java.util.List;
 
-/**
- * Thrown when search parameters fail validation. Carries every problem found, not just the first,
- * so the front end can show them all at once.
- */
 public class InvalidSearchException extends RuntimeException {
 
     private final List<String> errors;

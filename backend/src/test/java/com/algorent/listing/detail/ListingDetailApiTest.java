@@ -17,10 +17,6 @@ import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
-/**
- * GET /api/listings/{id} against a real Postgres. Uses the same fixture listings as the search
- * tests (see search-fixtures.sql).
- */
 @SpringBootTest
 @AutoConfigureMockMvc
 @Testcontainers(disabledWithoutDocker = true)

@@ -5,13 +5,6 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 
-/**
- * Everything the listing detail page shows. LINK_ONLY records intentionally populate only id,
- * title, sourceName, sourceUrl and sourceType.
- *
- * <p>status is returned rather than hiding non-active listings, so a saved listing that was taken
- * down can still be shown as "no longer available".
- */
 public record ListingDetail(
         long id,
         String title,
@@ -39,7 +32,7 @@ public record ListingDetail(
         String contactName,
         String contactEmail,
         String contactPhone,
-        String status,
+        String status, // so a saved listing that was taken down can show as unavailable
         String sourceName,
         String sourceUrl,
         String sourceType,

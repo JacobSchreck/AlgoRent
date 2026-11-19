@@ -28,9 +28,7 @@ server:
   servlet:
     session:
       cookie:
-        # Local: the defaults work. If the website and the API are on different domains,
-        # set SESSION_COOKIE_SAME_SITE=none and SESSION_COOKIE_SECURE=true (needs HTTPS),
-        # or the browser won't send the sign-in cookie to the API.
+        # use none + true if the frontend and api are on different domains
         same-site: ${SESSION_COOKIE_SAME_SITE:lax}
         secure: ${SESSION_COOKIE_SECURE:false}
 
@@ -47,5 +45,5 @@ algorent:
   cors:
     allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:3000}
   mail:
-    # false = don't send email; print verification codes in the backend log instead (local only)
+    # false prints codes to the log instead of emailing
     enabled: ${MAIL_ENABLED:true}

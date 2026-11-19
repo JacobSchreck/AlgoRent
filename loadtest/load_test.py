@@ -1,13 +1,4 @@
-# Load test for the AlgoRent API. Needs only Python 3, nothing to install.
-#
-#   python3 loadtest/load_test.py                          25 users for 30 seconds
-#   python3 loadtest/load_test.py --users 50 --seconds 60
-#   python3 loadtest/load_test.py --url http://localhost:8080
-#
-# Start the backend with the 5,000 demo listings first (start-local.bat or start-local.sh).
-# Each "user" is a thread that sends one request after another with no pause, which is
-# harder on the server than real people, who stop to read. The mix of requests is in MIX.
-# The script exits with 1 if the run fails the targets at the bottom of the report.
+# load test for the api, see loadtest/README.md
 
 import argparse
 import http.client
@@ -17,7 +8,7 @@ import threading
 import time
 from urllib.parse import urlencode, urlsplit
 
-# Cities in database/demo-data.sql, with the city center used for distance searches.
+# demo cities and their centers
 CITIES = [
     ("Gainesville", 29.6516, -82.3248), ("Austin", 30.2672, -97.7431), ("Atlanta", 33.7490, -84.3880),
     ("Boston", 42.3601, -71.0589), ("Chicago", 41.8781, -87.6298), ("New York", 40.7128, -74.0060),
@@ -30,8 +21,6 @@ CITIES = [
     ("Miami", 25.7617, -80.1918),
 ]
 
-# What share of requests each kind gets. Roughly what a guest does: mostly searching,
-# then opening a listing.
 MIX = [
     ("search by city", 40),
     ("search with dates and filters", 20),
@@ -40,13 +29,12 @@ MIX = [
     ("listing detail", 20),
 ]
 
-# Targets the run has to meet.
 MAX_P95_MS = 500
 MAX_ERROR_PERCENT = 1.0
 
 
 def next_summer():
-    # demo-data.sql puts listings in the coming summer: this year, or next year from September on
+    # demo listings are in the next summer
     now = time.localtime()
     return now.tm_year + (1 if now.tm_mon >= 9 else 0)
 
@@ -69,7 +57,6 @@ def make_path(kind, listing_ids):
 
 
 class Client:
-    """One keep-alive connection, reopened if the server drops it."""
 
     def __init__(self, url):
         parts = urlsplit(url)
@@ -78,7 +65,7 @@ class Client:
         self.conn = None
 
     def get(self, path):
-        """Returns (status, body, milliseconds). Status is 0 if the request failed."""
+        # status 0 means the request failed
         started = time.perf_counter()
         try:
             if self.conn is None:
@@ -97,7 +84,6 @@ class Client:
 
 
 def find_listings(url):
-    """Checks the server is up and collects listing ids to open during the test."""
     client = Client(url)
     listing_ids = []
     total = 0

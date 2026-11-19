@@ -41,7 +41,6 @@ const strPageCss = `
   }
 `;
 
-// how many places to load at a time
 const numPageSize = 50;
 
 const strSelOn =
@@ -76,7 +75,6 @@ function SearchResults() {
   const [strErr, setStrErr] = useState("");
   const [objZipSpots, setObjZipSpots] = useState<{ [strZip: string]: [number, number] }>({});
 
-  // the search as a query string, without the page number
   const objQuery = new URLSearchParams({
     city: strCity,
     size: String(numPageSize),
@@ -108,12 +106,11 @@ function SearchResults() {
 
   const strQuery = objQuery.toString();
 
-  // the search that's on screen, so a slow "Show more" can't add results to a newer search
+  // so a slow show more doesn't add results to a newer search
   const objShownQuery = useRef(strQuery);
 
-  // ask the backend for listings every time the search or a filter changes
   useEffect(() => {
-    // if the filters change again before this search finishes, ignore this one's results
+    // ignore this result if the filters changed while it was loading
     const objRun = { blnStale: false };
     const isStale = () => objRun.blnStale;
 
@@ -191,7 +188,6 @@ function SearchResults() {
     };
   }, [strQuery, strCity, strMoveIn, strMoveOut]);
 
-  // get the next page of results and add it to the list
   async function loadMore() {
     const strFor = strQuery;
     setBlnMoreLoading(true);

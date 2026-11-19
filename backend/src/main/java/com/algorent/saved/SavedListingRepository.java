@@ -34,7 +34,6 @@ public class SavedListingRepository {
         return count != null && count > 0;
     }
 
-    /** Everything one user has saved, oldest first, each with its notes in order. */
     public List<SavedListing> findAll(int userId) {
         Map<String, Object> params = Map.of("userId", userId);
 
@@ -58,7 +57,6 @@ public class SavedListingRepository {
                 params,
                 (rs, rowNum) -> new NoteRow(rs.getLong("listing_id"), rs.getString("body")));
 
-        // group the notes under the listing they belong to
         Map<Long, List<String>> notesByListing = new LinkedHashMap<>();
         for (NoteRow note : noteRows) {
             notesByListing.computeIfAbsent(note.listingId(), id -> new ArrayList<>()).add(note.body());
@@ -72,7 +70,6 @@ public class SavedListingRepository {
         return saved;
     }
 
-    /** Saves a listing, or replaces the status and notes of one that is already saved. */
     @Transactional
     public void save(int userId, long listingId, String status, List<String> notes) {
         MapSqlParameterSource key = new MapSqlParameterSource()
@@ -110,7 +107,6 @@ public class SavedListingRepository {
         }
     }
 
-    /** Removes a saved listing and its notes. Does nothing if it was not saved. */
     public void delete(int userId, long listingId) {
         jdbc.update(
                 "DELETE FROM favorites WHERE user_id = :userId AND listing_id = :listingId",
@@ -119,7 +115,6 @@ public class SavedListingRepository {
                         .addValue("listingId", listingId));
     }
 
-    /** One saved listing as the Saved page uses it. id is the listing id. */
     public record SavedListing(long id, String status, List<String> notes) {
     }
 

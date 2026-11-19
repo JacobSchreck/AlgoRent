@@ -6,11 +6,8 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import org.springframework.stereotype.Component;
 
-/**
- * Blocks sign-in for an email after 5 wrong passwords in 15 minutes, so passwords can't be
- * guessed quickly. Kept in memory, so it resets when the backend restarts.
- */
 @Component
+// 5 wrong passwords in 15 minutes blocks that email. Resets when the backend restarts.
 public class LoginAttemptLimiter {
 
     static final int MAX_FAILURES = 5;
@@ -38,7 +35,7 @@ public class LoginAttemptLimiter {
                         ? new Failures(1, now)
                         : new Failures(current.count() + 1, current.firstFailure()));
 
-        // don't let the map grow forever if someone tries lots of different emails
+        // clean up old entries so the map doesn't keep growing
         if (failures.size() > MAX_TRACKED_EMAILS) {
             failures.values().removeIf(entry -> entry.isExpired(now));
         }
@@ -48,7 +45,6 @@ public class LoginAttemptLimiter {
         failures.remove(email);
     }
 
-    /** For tests. */
     void clear() {
         failures.clear();
     }

@@ -9,15 +9,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-/**
- * City and date-range listing search.
- *
- * <p>Example: {@code GET /api/listings/search?city=Gainesville&moveIn=2027-05-15&moveOut=2027-08-10&maxRent=900}
- *
- * <p>Near a place: {@code GET /api/listings/search?city=Gainesville&lat=29.6487&lng=-82.3433&radiusMiles=3&sort=distance}
- *
- * <p>See backend/README.md for every parameter and the response shape.
- */
 @RestController
 @RequestMapping("/api/listings")
 public class ListingSearchController {

@@ -1,4 +1,4 @@
--- Test data for ListingSearchApiTest. Reset before every test so ids are predictable.
+-- test data, reset before each test
 TRUNCATE listing_flags, messages, inquiries, favorites, listing_images, listings, sources, users RESTART IDENTITY CASCADE;
 
 INSERT INTO users (email, password_hash, first_name, role, email_verified_at) VALUES
@@ -44,8 +44,7 @@ INSERT INTO listing_images (listing_id, image_url, display_order) VALUES
     (1, 'https://img.example.com/1-first.jpg', 1),
     (2, 'https://img.example.com/2.jpg', 0);
 
--- Coordinates for location search. Reference point: Century Tower, UF (29.6487, -82.3433).
--- Listing 3 has no coordinates on purpose (like most scraped listings today).
+-- distances are measured from Century Tower (29.6487, -82.3433), listing 3 has none on purpose
 UPDATE listings SET latitude = 29.6520, longitude = -82.3400 WHERE id = 1;  -- ~0.3 mi
 UPDATE listings SET latitude = 29.6800, longitude = -82.3600 WHERE id = 2;  -- ~2.3 mi
 UPDATE listings SET latitude = 29.7500, longitude = -82.2500 WHERE id = 4;  -- ~9 mi

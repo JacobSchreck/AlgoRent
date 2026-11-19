@@ -164,11 +164,7 @@ def upsert_listings(source_id: int, listings: Iterable[Listing]) -> UpsertResult
 
 
 def mark_missing_listings_removed(source_id: int, seen_external_ids: Iterable[str]) -> int:
-    """Mark this source's active listings that were not in the latest full fetch as REMOVED.
-
-    Only call this after a complete fetch. An empty fetch removes nothing, because a source
-    returning zero listings is much more likely to be a scraper problem than a real result.
-    """
+    # empty fetch is probably a scraper problem, so don't remove anything
 
     seen = sorted(set(seen_external_ids))
     if not seen:

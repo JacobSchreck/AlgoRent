@@ -63,7 +63,6 @@ export default function ListingPage() {
   useEffect(() => {
     async function loadListing() {
       setBlnLoading(true);
-      // only signed-in users have a saved list; signed-out users see "Save"
       loadSaved()
         .then((arrSaved) => setBlnSaved(arrSaved != null && arrSaved.some((objItem) => objItem.id == Number(strId))))
         .catch(() => setBlnSaved(false));
@@ -87,7 +86,6 @@ export default function ListingPage() {
   }, [strId]);
 
   async function toggleSave() {
-    // saving needs an account, so send signed-out users to log in and back here
     const objMe = await fetch(`${strApiUrl}/api/auth/me`, { credentials: "include" }).catch(() => null);
     if (objMe == null || objMe.status == 401) {
       objRouter.push(`/login?next=${encodeURIComponent(`/listings/${strId}`)}`);

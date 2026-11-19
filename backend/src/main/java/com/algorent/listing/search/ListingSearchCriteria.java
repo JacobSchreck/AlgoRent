@@ -6,17 +6,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 
-/**
- * A validated, normalized listing search. Build one with {@link #of}; the record's fields are then
- * safe to hand to {@link ListingSearchSql}.
- *
- * <p>Text filters are trimmed and lower-cased (blank means "not set"). Dates are the guest's stay:
- * a listing matches when it is available for the whole stay, from move-in through move-out.
- *
- * <p>Location is optional: latitude and longitude (for example a campus or workplace) add a
- * distance to every result and allow {@code sort=distance}; radiusMiles then limits results to
- * listings within that many miles.
- */
 public record ListingSearchCriteria(
         String city,
         String state,
@@ -44,7 +33,6 @@ public record ListingSearchCriteria(
     private static final int MAX_STATE_LENGTH = 50;
     private static final int MAX_TYPE_LENGTH = 50;
 
-    /** Search without a location. See the full {@link #of} for details. */
     public static ListingSearchCriteria of(
             String city,
             String state,
@@ -64,11 +52,6 @@ public record ListingSearchCriteria(
                 minBedrooms, furnished, utilitiesIncluded, null, null, null, sort, page, size);
     }
 
-    /**
-     * Validates raw request values. Any argument may be null (meaning "not provided").
-     *
-     * @throws InvalidSearchException listing every problem found
-     */
     public static ListingSearchCriteria of(
             String city,
             String state,
@@ -194,12 +177,10 @@ public record ListingSearchCriteria(
                 resolvedSize);
     }
 
-    /** True when the search is centred on a location, so results carry a distance. */
     public boolean hasLocation() {
         return latitude != null && longitude != null;
     }
 
-    /** Row offset for this page. A long, so a very large page number cannot overflow. */
     public long offset() {
         return (long) page * size;
     }

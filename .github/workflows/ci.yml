@@ -1,7 +1,5 @@
 name: CI
 
-# Runs on every pull request and on pushes to the long-lived branches.
-# Branch strategy: live (production) <- dev-BE / dev-FE <- feature branches.
 on:
   pull_request:
   push:
@@ -27,7 +25,6 @@ jobs:
           java-version: "21"
           cache: maven
 
-      # Includes the Testcontainers tests, which start Postgres 17 in Docker (available on GitHub runners).
       - name: Build and test
         run: mvn -B -ntp verify
 

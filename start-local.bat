@@ -30,7 +30,7 @@ set "DB_PASSWORD=algorent"
 set "SPRING_DATASOURCE_URL=jdbc:postgresql://localhost:5433/algorent?sslmode=disable"
 set "CORS_ALLOWED_ORIGINS=http://localhost:3000"
 set "NEXT_PUBLIC_API_URL=http://localhost:8080"
-rem No email server locally: sign-up codes are printed in the backend window instead.
+rem no email server locally, codes show in the backend window
 set "MAIL_ENABLED=false"
 
 echo Opening backend and frontend terminals...
